@@ -1,42 +1,43 @@
 use tauri::State;
 
-use crate::db::DbState;
-use crate::utils::error::CommandResult;
-
-#[derive(Debug, serde::Deserialize)]
-pub struct CaptureRegion {
-    pub x: i32,
-    pub y: i32,
-    pub width: u32,
-    pub height: u32,
-}
+use crate::app_state::AppState;
+use crate::error::CommandResult;
+use crate::models::capture::CaptureRegion;
 
 #[tauri::command]
 pub fn capture(
     r#type: String,
     region: Option<CaptureRegion>,
-    state: State<'_, DbState>,
+    state: State<'_, AppState>,
 ) -> CommandResult<String> {
-    let _conn = state.0.lock().unwrap();
-
     match r#type.as_str() {
         "fullscreen" => {
-            // TODO: Implement full screen capture
-            log::info!("Full screen capture requested");
-            CommandResult::err("Full screen capture not yet implemented")
+            tracing::info!("Full screen capture requested");
+            match state.capture_service.capture_full_screen() {
+                Ok(result) => CommandResult::ok(result.file_path),
+                Err(e) => CommandResult::err(e.to_string()),
+            }
         }
         "region" => {
-            if let Some(_r) = region {
-                // TODO: Implement region capture
-                log::info!("Region capture requested");
-                CommandResult::err("Region capture not yet implemented")
+            if let Some(r) = region {
+                tracing::info!(
+                    "Region capture requested: x={}, y={}, width={}, height={}",
+                    r.x,
+                    r.y,
+                    r.width,
+                    r.height
+                );
+                match state.capture_service.capture_region(&r) {
+                    Ok(result) => CommandResult::ok(result.file_path),
+                    Err(e) => CommandResult::err(e.to_string()),
+                }
             } else {
                 CommandResult::err("Region not specified")
             }
         }
         "window" => {
-            // TODO: Implement window capture
-            log::info!("Window capture requested");
+            tracing::info!("Window capture requested");
+            // Window capture requires hwnd, will be handled in future implementation
             CommandResult::err("Window capture not yet implemented")
         }
         _ => CommandResult::err(format!("Unknown capture type: {}", r#type)),

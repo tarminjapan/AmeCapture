@@ -1,4 +1,4 @@
-use crate::utils::error::AppResult;
+use crate::error::AppResult;
 use rusqlite::Connection;
 
 /// Run database migrations

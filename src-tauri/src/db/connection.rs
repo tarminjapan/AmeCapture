@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use std::path::Path;
 
-use crate::utils::error::AppResult;
+use crate::error::AppResult;
 
 /// Create a new database connection
 pub fn create_connection(db_path: &Path) -> AppResult<Connection> {
