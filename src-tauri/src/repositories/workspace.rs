@@ -147,3 +147,144 @@ impl WorkspaceRepository for SqliteWorkspaceRepository {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::migrations::run_migrations;
+    use rusqlite::Connection;
+
+    fn setup_repo() -> SqliteWorkspaceRepository {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        run_migrations(&conn).unwrap();
+        SqliteWorkspaceRepository::new(Arc::new(Mutex::new(conn)))
+    }
+
+    fn sample_item(id: &str) -> WorkspaceItem {
+        WorkspaceItem {
+            id: id.to_string(),
+            item_type: WorkspaceItemType::Image,
+            original_path: "/original/test.png".to_string(),
+            current_path: "/current/test.png".to_string(),
+            thumbnail_path: Some("/thumb/test_thumb.png".to_string()),
+            title: "Test Item".to_string(),
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            updated_at: "2026-01-01T00:00:00Z".to_string(),
+            is_favorite: false,
+            metadata_json: None,
+        }
+    }
+
+    #[test]
+    fn test_add_and_get_by_id() {
+        let repo = setup_repo();
+        let item = sample_item("id-1");
+        repo.add(&item).unwrap();
+
+        let found = repo.get_by_id("id-1").unwrap();
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!(found.id, "id-1");
+        assert_eq!(found.title, "Test Item");
+        assert_eq!(found.item_type, WorkspaceItemType::Image);
+        assert_eq!(found.original_path, "/original/test.png");
+        assert_eq!(found.current_path, "/current/test.png");
+        assert_eq!(
+            found.thumbnail_path,
+            Some("/thumb/test_thumb.png".to_string())
+        );
+        assert!(!found.is_favorite);
+    }
+
+    #[test]
+    fn test_get_by_id_not_found() {
+        let repo = setup_repo();
+        let result = repo.get_by_id("nonexistent").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_get_all_empty() {
+        let repo = setup_repo();
+        let items = repo.get_all().unwrap();
+        assert!(items.is_empty());
+    }
+
+    #[test]
+    fn test_get_all_multiple_items() {
+        let repo = setup_repo();
+        repo.add(&sample_item("id-1")).unwrap();
+        repo.add(&sample_item("id-2")).unwrap();
+        repo.add(&sample_item("id-3")).unwrap();
+
+        let items = repo.get_all().unwrap();
+        assert_eq!(items.len(), 3);
+    }
+
+    #[test]
+    fn test_update() {
+        let repo = setup_repo();
+        let mut item = sample_item("id-1");
+        repo.add(&item).unwrap();
+
+        item.title = "Updated Title".to_string();
+        item.is_favorite = true;
+        item.updated_at = "2026-01-02T00:00:00Z".to_string();
+        repo.update(&item).unwrap();
+
+        let found = repo.get_by_id("id-1").unwrap().unwrap();
+        assert_eq!(found.title, "Updated Title");
+        assert!(found.is_favorite);
+        assert_eq!(found.updated_at, "2026-01-02T00:00:00Z");
+    }
+
+    #[test]
+    fn test_delete() {
+        let repo = setup_repo();
+        repo.add(&sample_item("id-1")).unwrap();
+        assert!(repo.get_by_id("id-1").unwrap().is_some());
+
+        repo.delete("id-1").unwrap();
+        assert!(repo.get_by_id("id-1").unwrap().is_none());
+    }
+
+    #[test]
+    fn test_delete_nonexistent_is_ok() {
+        let repo = setup_repo();
+        repo.delete("nonexistent").unwrap();
+    }
+
+    #[test]
+    fn test_video_type_roundtrip() {
+        let repo = setup_repo();
+        let mut item = sample_item("id-v1");
+        item.item_type = WorkspaceItemType::Video;
+        repo.add(&item).unwrap();
+
+        let found = repo.get_by_id("id-v1").unwrap().unwrap();
+        assert_eq!(found.item_type, WorkspaceItemType::Video);
+    }
+
+    #[test]
+    fn test_null_optional_fields() {
+        let repo = setup_repo();
+        let item = WorkspaceItem {
+            id: "id-opt".to_string(),
+            item_type: WorkspaceItemType::Image,
+            original_path: "/original/test.png".to_string(),
+            current_path: "/current/test.png".to_string(),
+            thumbnail_path: None,
+            title: "No Thumbnail".to_string(),
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            updated_at: "2026-01-01T00:00:00Z".to_string(),
+            is_favorite: false,
+            metadata_json: None,
+        };
+        repo.add(&item).unwrap();
+
+        let found = repo.get_by_id("id-opt").unwrap().unwrap();
+        assert!(found.thumbnail_path.is_none());
+        assert!(found.metadata_json.is_none());
+    }
+}
