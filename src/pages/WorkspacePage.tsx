@@ -6,6 +6,7 @@ import { ThumbnailGrid } from '@/components/ThumbnailGrid';
 import { DetailPanel } from '@/components/DetailPanel';
 import { Toolbar } from '@/components/Toolbar';
 import { ImageOff, Settings } from 'lucide-react';
+import { getTypeLabel } from '@/lib/mediaTypeConfig';
 
 export default function WorkspacePage() {
   const items = useWorkspaceStore((s) => s.items);
@@ -32,7 +33,7 @@ export default function WorkspacePage() {
         (item) =>
           item.title.toLowerCase().includes(q) ||
           item.type.toLowerCase().includes(q) ||
-          (item.type === 'image' ? '画像' : '動画').includes(q),
+          getTypeLabel(item.type).includes(q),
       );
     }
 

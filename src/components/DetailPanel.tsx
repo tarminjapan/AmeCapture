@@ -1,6 +1,7 @@
 import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
 import { X, Star, Copy, FolderOpen, Trash2, Edit3 } from 'lucide-react';
+import { getTypeLabel } from '@/lib/mediaTypeConfig';
 
 interface DetailPanelProps {
   item: WorkspaceItem;
@@ -39,7 +40,7 @@ export function DetailPanel({ item, onClose, onToggleFavorite, onDelete }: Detai
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">種別</span>
-          <span>{item.type === 'image' ? '画像' : '動画'}</span>
+          <span>{getTypeLabel(item.type)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">撮影日時</span>

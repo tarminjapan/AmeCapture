@@ -1,6 +1,7 @@
 import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
 import { Star, StarOff, Trash2, ImageIcon, Film } from 'lucide-react';
+import { MEDIA_TYPE_CONFIG } from '@/lib/mediaTypeConfig';
 
 interface ThumbnailGridProps {
   items: WorkspaceItem[];
@@ -68,11 +69,9 @@ export function ThumbnailGrid({
 
             {/* Type badge */}
             <span
-              className={`absolute top-1 left-1 px-1.5 py-0.5 text-[10px] font-medium rounded ${
-                item.type === 'video' ? 'bg-purple-500/90 text-white' : 'bg-blue-500/90 text-white'
-              }`}
+              className={`absolute top-1 left-1 px-1.5 py-0.5 text-[10px] font-medium rounded ${MEDIA_TYPE_CONFIG[item.type].badgeClass}`}
             >
-              {item.type === 'video' ? '動画' : '画像'}
+              {MEDIA_TYPE_CONFIG[item.type].label}
             </span>
           </div>
 
