@@ -3,7 +3,9 @@ use crate::utils::error::{AppError, AppResult};
 /// Capture a specific window
 /// TODO: Implement using Win32 API window enumeration + capture
 pub fn capture_window(_hwnd: isize) -> AppResult<image::RgbaImage> {
-    Err(AppError::Capture("Window capture not yet implemented".into()))
+    Err(AppError::Capture(
+        "Window capture not yet implemented".into(),
+    ))
 }
 
 /// Enumerate all visible windows

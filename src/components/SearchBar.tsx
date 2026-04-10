@@ -1,5 +1,5 @@
-import { useWorkspaceStore } from "@/stores/workspaceStore";
-import { Search } from "lucide-react";
+import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { Search } from 'lucide-react';
 
 export function SearchBar() {
   const searchQuery = useWorkspaceStore((s) => s.searchQuery);

@@ -1,10 +1,10 @@
-mod commands;
 mod capture;
-mod workspace;
-mod editor;
-mod db;
+mod commands;
 mod config;
+mod db;
+mod editor;
 mod utils;
+mod workspace;
 
 use tauri::Manager;
 
@@ -24,10 +24,9 @@ pub fn run() {
             std::fs::create_dir_all(&app_data_dir).ok();
 
             let db_path = app_data_dir.join("amecapture.db");
-            let conn = db::connection::create_connection(&db_path)
-                .expect("Failed to initialize database");
-            db::migrations::run_migrations(&conn)
-                .expect("Failed to run database migrations");
+            let conn =
+                db::connection::create_connection(&db_path).expect("Failed to initialize database");
+            db::migrations::run_migrations(&conn).expect("Failed to run database migrations");
 
             // Store the connection as managed state
             app.manage(db::DbState(std::sync::Mutex::new(conn)));

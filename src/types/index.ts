@@ -2,7 +2,7 @@
 
 export interface WorkspaceItem {
   id: string;
-  type: "image" | "video";
+  type: 'image' | 'video';
   originalPath: string;
   currentPath: string;
   thumbnailPath: string;
@@ -32,11 +32,11 @@ export interface CaptureRegion {
   height: number;
 }
 
-export type CaptureType = "fullscreen" | "region" | "window";
+export type CaptureType = 'fullscreen' | 'region' | 'window';
 
 // === Editor Types ===
 
-export type EditorTool = "select" | "arrow" | "text" | "rectangle" | "mosaic" | "crop";
+export type EditorTool = 'select' | 'arrow' | 'text' | 'rectangle' | 'mosaic' | 'crop';
 
 export interface EditorState {
   activeTool: EditorTool;
@@ -52,7 +52,7 @@ export interface EditorState {
 
 export interface AppSettings {
   savePath: string;
-  imageFormat: "png" | "jpg" | "webp";
+  imageFormat: 'png' | 'jpg' | 'webp';
   startMinimized: boolean;
   hotkeyCaptureRegion: string;
   hotkeyCaptureFullscreen: string;

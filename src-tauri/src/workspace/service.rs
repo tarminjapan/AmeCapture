@@ -1,6 +1,6 @@
-use rusqlite::{params, Connection};
-use crate::utils::error::AppResult;
 use super::models::WorkspaceItem;
+use crate::utils::error::AppResult;
+use rusqlite::{params, Connection};
 
 /// Get all workspace items ordered by created_at desc
 pub fn get_all_items(conn: &Connection) -> AppResult<Vec<WorkspaceItem>> {
@@ -8,23 +8,26 @@ pub fn get_all_items(conn: &Connection) -> AppResult<Vec<WorkspaceItem>> {
         "SELECT id, type, original_path, current_path, thumbnail_path,
                 title, created_at, updated_at, is_favorite, metadata_json
          FROM workspace_items
-         ORDER BY created_at DESC"
+         ORDER BY created_at DESC",
     )?;
 
-    let items = stmt.query_map([], |row| {
-        Ok(WorkspaceItem {
-            id: row.get(0)?,
-            item_type: row.get(1)?,
-            original_path: row.get(2)?,
-            current_path: row.get(3)?,
-            thumbnail_path: row.get(4)?,
-            title: row.get(5)?,
-            created_at: row.get(6)?,
-            updated_at: row.get(7)?,
-            is_favorite: row.get::<_, i32>(8)? != 0,
-            metadata_json: row.get(9)?,
-        })
-    })?.filter_map(|i| i.ok()).collect();
+    let items = stmt
+        .query_map([], |row| {
+            Ok(WorkspaceItem {
+                id: row.get(0)?,
+                item_type: row.get(1)?,
+                original_path: row.get(2)?,
+                current_path: row.get(3)?,
+                thumbnail_path: row.get(4)?,
+                title: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
+                is_favorite: row.get::<_, i32>(8)? != 0,
+                metadata_json: row.get(9)?,
+            })
+        })?
+        .filter_map(|i| i.ok())
+        .collect();
 
     Ok(items)
 }

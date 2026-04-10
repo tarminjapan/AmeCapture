@@ -39,3 +39,6 @@ npm-debug.log*
 
 # Tauri
 src-tauri/Cargo.lock
+
+# simple-git-hooks
+.simple-git-hooks*

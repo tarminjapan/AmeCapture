@@ -1,5 +1,5 @@
-import type { WorkspaceItem } from "@/types";
-import { X, Star, Copy, FolderOpen, Trash2, Edit3 } from "lucide-react";
+import type { WorkspaceItem } from '@/types';
+import { X, Star, Copy, FolderOpen, Trash2, Edit3 } from 'lucide-react';
 
 interface DetailPanelProps {
   item: WorkspaceItem;
@@ -12,10 +12,7 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-sm truncate">{item.title}</h3>
-        <button
-          className="p-1 rounded hover:bg-accent"
-          onClick={onClose}
-        >
+        <button className="p-1 rounded hover:bg-accent" onClick={onClose}>
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -23,11 +20,7 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
       {/* Preview */}
       <div className="aspect-video rounded-md bg-muted overflow-hidden">
         {item.thumbnailPath ? (
-          <img
-            src={item.thumbnailPath}
-            alt={item.title}
-            className="w-full h-full object-cover"
-          />
+          <img src={item.thumbnailPath} alt={item.title} className="w-full h-full object-cover" />
         ) : (
           <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
             No preview
@@ -39,15 +32,15 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">種別</span>
-          <span>{item.type === "image" ? "画像" : "動画"}</span>
+          <span>{item.type === 'image' ? '画像' : '動画'}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">撮影日時</span>
-          <span>{new Date(item.createdAt).toLocaleString("ja-JP")}</span>
+          <span>{new Date(item.createdAt).toLocaleString('ja-JP')}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">更新日時</span>
-          <span>{new Date(item.updatedAt).toLocaleString("ja-JP")}</span>
+          <span>{new Date(item.updatedAt).toLocaleString('ja-JP')}</span>
         </div>
       </div>
 
@@ -67,7 +60,7 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
         </button>
         <button className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent">
           <Star className="w-4 h-4" />
-          {item.isFavorite ? "お気に入り解除" : "お気に入り"}
+          {item.isFavorite ? 'お気に入り解除' : 'お気に入り'}
         </button>
         <button className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent text-destructive">
           <Trash2 className="w-4 h-4" />

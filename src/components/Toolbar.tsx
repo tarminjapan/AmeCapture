@@ -1,4 +1,4 @@
-import { Camera, Monitor, AppWindow } from "lucide-react";
+import { Camera, Monitor, AppWindow } from 'lucide-react';
 
 interface ToolbarProps {
   onCaptureFullscreen: () => void;
@@ -6,11 +6,7 @@ interface ToolbarProps {
   onCaptureWindow: () => void;
 }
 
-export function Toolbar({
-  onCaptureFullscreen,
-  onCaptureRegion,
-  onCaptureWindow,
-}: ToolbarProps) {
+export function Toolbar({ onCaptureFullscreen, onCaptureRegion, onCaptureWindow }: ToolbarProps) {
   return (
     <div className="flex items-center gap-1">
       <button

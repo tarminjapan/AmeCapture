@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import type { EditorTool } from "@/types";
+import { create } from 'zustand';
+import type { EditorTool } from '@/types';
 
 interface EditorState {
   activeTool: EditorTool;
@@ -23,9 +23,9 @@ interface EditorState {
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
-  activeTool: "select",
-  strokeColor: "#ff0000",
-  fillColor: "transparent",
+  activeTool: 'select',
+  strokeColor: '#ff0000',
+  fillColor: 'transparent',
   strokeWidth: 2,
   fontSize: 16,
   canUndo: false,

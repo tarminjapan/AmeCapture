@@ -1,5 +1,5 @@
-import type { WorkspaceItem } from "@/types";
-import { Star, StarOff, Trash2, Copy, FolderOpen } from "lucide-react";
+import type { WorkspaceItem } from '@/types';
+import { Star, StarOff, Trash2, Copy, FolderOpen } from 'lucide-react';
 
 interface ThumbnailGridProps {
   items: WorkspaceItem[];
@@ -30,7 +30,7 @@ export function ThumbnailGrid({
 
   const handleDoubleClick = (item: WorkspaceItem) => {
     // TODO: Open editor with this item
-    console.log("Open editor for:", item.id);
+    console.log('Open editor for:', item.id);
   };
 
   return (
@@ -40,8 +40,8 @@ export function ThumbnailGrid({
           key={item.id}
           className={`group relative rounded-lg border overflow-hidden cursor-pointer transition-colors ${
             selectedIds.includes(item.id)
-              ? "border-primary ring-2 ring-primary/30"
-              : "border-border hover:border-primary/50"
+              ? 'border-primary ring-2 ring-primary/30'
+              : 'border-border hover:border-primary/50'
           }`}
           onClick={(e) => handleClick(item.id, e)}
           onDoubleClick={() => handleDoubleClick(item)}
@@ -63,7 +63,7 @@ export function ThumbnailGrid({
           <div className="p-2">
             <p className="text-sm font-medium truncate">{item.title}</p>
             <p className="text-xs text-muted-foreground">
-              {new Date(item.createdAt).toLocaleString("ja-JP")}
+              {new Date(item.createdAt).toLocaleString('ja-JP')}
             </p>
           </div>
 

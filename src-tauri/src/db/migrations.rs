@@ -1,5 +1,5 @@
-use rusqlite::Connection;
 use crate::utils::error::AppResult;
+use rusqlite::Connection;
 
 /// Run database migrations
 pub fn run_migrations(conn: &Connection) -> AppResult<()> {
@@ -38,7 +38,7 @@ pub fn run_migrations(conn: &Connection) -> AppResult<()> {
         CREATE INDEX IF NOT EXISTS idx_workspace_items_created_at
             ON workspace_items(created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_workspace_items_is_favorite
-            ON workspace_items(is_favorite);"
+            ON workspace_items(is_favorite);",
     )?;
     Ok(())
 }

@@ -1,12 +1,12 @@
-import { create } from "zustand";
-import type { WorkspaceItem } from "@/types";
+import { create } from 'zustand';
+import type { WorkspaceItem } from '@/types';
 
 interface WorkspaceState {
   items: WorkspaceItem[];
   selectedItemIds: string[];
   searchQuery: string;
-  sortBy: "createdAt" | "updatedAt" | "title";
-  sortOrder: "asc" | "desc";
+  sortBy: 'createdAt' | 'updatedAt' | 'title';
+  sortOrder: 'asc' | 'desc';
   isLoading: boolean;
 
   // Actions
@@ -16,23 +16,22 @@ interface WorkspaceState {
   updateItem: (id: string, updates: Partial<WorkspaceItem>) => void;
   setSelectedItemIds: (ids: string[]) => void;
   setSearchQuery: (query: string) => void;
-  setSortBy: (sortBy: "createdAt" | "updatedAt" | "title") => void;
-  setSortOrder: (order: "asc" | "desc") => void;
+  setSortBy: (sortBy: 'createdAt' | 'updatedAt' | 'title') => void;
+  setSortOrder: (order: 'asc' | 'desc') => void;
   setLoading: (loading: boolean) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   items: [],
   selectedItemIds: [],
-  searchQuery: "",
-  sortBy: "createdAt",
-  sortOrder: "desc",
+  searchQuery: '',
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
   isLoading: false,
 
   setItems: (items) => set({ items }),
   addItem: (item) => set((state) => ({ items: [item, ...state.items] })),
-  removeItem: (id) =>
-    set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+  removeItem: (id) => set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
   updateItem: (id, updates) =>
     set((state) => ({
       items: state.items.map((i) => (i.id === id ? { ...i, ...updates } : i)),
