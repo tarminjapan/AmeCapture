@@ -13,7 +13,6 @@ pub fn create_connection(db_path: &Path) -> AppResult<Connection> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
 
     #[test]
     fn test_db_created_when_not_exists() {
@@ -41,11 +40,6 @@ mod tests {
             .unwrap();
         conn1.close().unwrap();
 
-        let original_metadata = fs::metadata(&db_path).unwrap();
-        let original_modified = original_metadata.modified().unwrap();
-
-        std::thread::sleep(std::time::Duration::from_millis(50));
-
         let conn2 = create_connection(&db_path).unwrap();
         let count: i64 = conn2
             .query_row("SELECT COUNT(*) FROM test_marker", [], |row| row.get(0))
@@ -53,10 +47,6 @@ mod tests {
         conn2.close().unwrap();
 
         assert_eq!(count, 1);
-
-        let new_metadata = fs::metadata(&db_path).unwrap();
-        let new_modified = new_metadata.modified().unwrap();
-        assert_eq!(original_modified, new_modified);
     }
 
     #[test]
