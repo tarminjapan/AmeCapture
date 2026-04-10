@@ -29,7 +29,10 @@ export default function WorkspacePage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
-        (item) => item.title.toLowerCase().includes(q) || item.type.toLowerCase().includes(q),
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.type.toLowerCase().includes(q) ||
+          (item.type === 'image' ? '画像' : '動画').includes(q),
       );
     }
 
@@ -38,9 +41,9 @@ export default function WorkspacePage() {
       if (sortBy === 'title') {
         cmp = a.title.localeCompare(b.title);
       } else if (sortBy === 'updatedAt') {
-        cmp = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        cmp = a.updatedAt.localeCompare(b.updatedAt);
       } else {
-        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        cmp = a.createdAt.localeCompare(b.createdAt);
       }
       return sortOrder === 'asc' ? cmp : -cmp;
     });
@@ -137,10 +140,9 @@ export default function WorkspacePage() {
         {showDetail && selectedItem && (
           <DetailPanel
             item={selectedItem}
-            onClose={() => {
-              setShowDetail(false);
-              setSelectedItemIds([]);
-            }}
+            onClose={() => setShowDetail(false)}
+            onToggleFavorite={toggleFavorite}
+            onDelete={deleteItem}
           />
         )}
       </div>

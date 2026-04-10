@@ -1,12 +1,15 @@
+import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
 import { X, Star, Copy, FolderOpen, Trash2, Edit3 } from 'lucide-react';
 
 interface DetailPanelProps {
   item: WorkspaceItem;
   onClose: () => void;
+  onToggleFavorite: (id: string, isFavorite: boolean) => void;
+  onDelete: (id: string) => void;
 }
 
-export function DetailPanel({ item, onClose }: DetailPanelProps) {
+export function DetailPanel({ item, onClose, onToggleFavorite, onDelete }: DetailPanelProps) {
   return (
     <div className="w-72 border-l border-border bg-card p-4 space-y-4 overflow-auto">
       {/* Header */}
@@ -20,10 +23,14 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
       {/* Preview */}
       <div className="aspect-video rounded-md bg-muted overflow-hidden">
         {item.thumbnailPath ? (
-          <img src={item.thumbnailPath} alt={item.title} className="w-full h-full object-cover" />
+          <img
+            src={convertFileSrc(item.thumbnailPath)}
+            alt={item.title}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
-            No preview
+            プレビューなし
           </div>
         )}
       </div>
@@ -58,11 +65,17 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
           <FolderOpen className="w-4 h-4" />
           保存先を開く
         </button>
-        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent">
-          <Star className="w-4 h-4" />
+        <button
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent"
+          onClick={() => onToggleFavorite(item.id, !item.isFavorite)}
+        >
+          <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
           {item.isFavorite ? 'お気に入り解除' : 'お気に入り'}
         </button>
-        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent text-destructive">
+        <button
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent text-destructive"
+          onClick={() => onDelete(item.id)}
+        >
           <Trash2 className="w-4 h-4" />
           削除
         </button>

@@ -72,7 +72,7 @@ export function ThumbnailGrid({
                 item.type === 'video' ? 'bg-purple-500/90 text-white' : 'bg-blue-500/90 text-white'
               }`}
             >
-              {item.type === 'video' ? 'Video' : 'Image'}
+              {item.type === 'video' ? '動画' : '画像'}
             </span>
           </div>
 
