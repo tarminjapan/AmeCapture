@@ -1,0 +1,18 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+
+## IDE
+.vs/
+.vscode/
+*.DotSettings.user
+
+## Build
+artifacts/
+
+## App data
+*.db
