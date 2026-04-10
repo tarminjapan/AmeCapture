@@ -22,6 +22,7 @@ use crate::repositories::workspace::SqliteWorkspaceRepository;
 use crate::services::capture::DefaultCaptureService;
 use crate::services::editor::DefaultEditorService;
 use crate::services::settings::DefaultSettingsService;
+use crate::services::storage::DefaultStorageService;
 use crate::services::thumbnail::DefaultThumbnailService;
 use crate::services::workspace::DefaultWorkspaceService;
 
@@ -75,12 +76,15 @@ pub fn run() {
             let workspace_repo = SqliteWorkspaceRepository::new(Arc::clone(&conn));
             let settings_repo = SqliteSettingsRepository::new(Arc::clone(&conn));
 
+            let storage_service = DefaultStorageService::new(save_path);
+
             let app_state = AppState {
                 capture_service: Box::new(DefaultCaptureService::new()),
                 workspace_service: Box::new(DefaultWorkspaceService::new(workspace_repo)),
                 settings_service: Box::new(DefaultSettingsService::new(settings_repo)),
                 editor_service: Box::new(DefaultEditorService::new()),
                 thumbnail_service: Box::new(DefaultThumbnailService::new()),
+                storage_service: Box::new(storage_service),
                 db_conn: conn,
             };
 
@@ -100,6 +104,8 @@ pub fn run() {
             commands::editor::redo,
             commands::settings::get_settings,
             commands::settings::save_settings,
+            commands::storage::get_storage_paths,
+            commands::storage::resolve_storage_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
