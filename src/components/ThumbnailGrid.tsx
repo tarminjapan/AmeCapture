@@ -1,5 +1,7 @@
+import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
-import { Star, StarOff, Trash2, Copy, FolderOpen } from 'lucide-react';
+import { Star, StarOff, Trash2, ImageIcon, Film } from 'lucide-react';
+import { MEDIA_TYPE_CONFIG } from '@/lib/mediaTypeConfig';
 
 interface ThumbnailGridProps {
   items: WorkspaceItem[];
@@ -18,7 +20,6 @@ export function ThumbnailGrid({
 }: ThumbnailGridProps) {
   const handleClick = (id: string, e: React.MouseEvent) => {
     if (e.ctrlKey || e.metaKey) {
-      // Toggle selection
       const newIds = selectedIds.includes(id)
         ? selectedIds.filter((sid) => sid !== id)
         : [...selectedIds, id];
@@ -47,16 +48,31 @@ export function ThumbnailGrid({
           onDoubleClick={() => handleDoubleClick(item)}
         >
           {/* Thumbnail */}
-          <div className="aspect-video bg-muted flex items-center justify-center">
+          <div className="aspect-video bg-muted flex items-center justify-center relative">
             {item.thumbnailPath ? (
               <img
                 src={convertFileSrc(item.thumbnailPath)}
                 alt={item.title}
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
             ) : (
-              <span className="text-xs text-muted-foreground">No preview</span>
+              <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                {item.type === 'video' ? (
+                  <Film className="w-8 h-8" />
+                ) : (
+                  <ImageIcon className="w-8 h-8" />
+                )}
+                <span className="text-xs">No preview</span>
+              </div>
             )}
+
+            {/* Type badge */}
+            <span
+              className={`absolute top-1 left-1 px-1.5 py-0.5 text-[10px] font-medium rounded ${MEDIA_TYPE_CONFIG[item.type].badgeClass}`}
+            >
+              {MEDIA_TYPE_CONFIG[item.type].label}
+            </span>
           </div>
 
           {/* Info */}
@@ -96,10 +112,4 @@ export function ThumbnailGrid({
       ))}
     </div>
   );
-}
-
-/** Convert file path to Tauri asset URL */
-function convertFileSrc(path: string): string {
-  // TODO: Use @tauri-apps/api/core convertFileSrc
-  return `tauri://localhost/${encodeURIComponent(path)}`;
 }

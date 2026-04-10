@@ -31,7 +31,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
 
   setItems: (items) => set({ items }),
   addItem: (item) => set((state) => ({ items: [item, ...state.items] })),
-  removeItem: (id) => set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+  removeItem: (id) =>
+    set((state) => ({
+      items: state.items.filter((i) => i.id !== id),
+      selectedItemIds: state.selectedItemIds.filter((sid) => sid !== id),
+    })),
   updateItem: (id, updates) =>
     set((state) => ({
       items: state.items.map((i) => (i.id === id ? { ...i, ...updates } : i)),
