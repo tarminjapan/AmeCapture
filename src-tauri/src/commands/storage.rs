@@ -1,8 +1,24 @@
+use std::path::Path;
+
 use serde::Serialize;
 use tauri::State;
 
 use crate::app_state::AppState;
 use crate::error::CommandResult;
+
+fn sanitize_filename(filename: &str) -> Result<String, String> {
+    match Path::new(filename).file_name() {
+        Some(name) => {
+            let safe = name.to_string_lossy();
+            if safe.is_empty() {
+                Err("Invalid filename".to_string())
+            } else {
+                Ok(safe.to_string())
+            }
+        }
+        None => Err("Invalid filename".to_string()),
+    }
+}
 
 /// Response payload for storage directory paths.
 #[derive(Debug, Serialize)]
@@ -34,11 +50,16 @@ pub fn resolve_storage_path(
     filename: String,
     state: State<'_, AppState>,
 ) -> CommandResult<String> {
+    let safe_filename = match sanitize_filename(&filename) {
+        Ok(name) => name,
+        Err(e) => return CommandResult::err(e),
+    };
+
     let path = match category.as_str() {
-        "originals" => state.storage_service.resolve_original_path(&filename),
-        "edited" => state.storage_service.resolve_edited_path(&filename),
-        "thumbnails" => state.storage_service.resolve_thumbnail_path(&filename),
-        "videos" => state.storage_service.resolve_video_path(&filename),
+        "originals" => state.storage_service.resolve_original_path(&safe_filename),
+        "edited" => state.storage_service.resolve_edited_path(&safe_filename),
+        "thumbnails" => state.storage_service.resolve_thumbnail_path(&safe_filename),
+        "videos" => state.storage_service.resolve_video_path(&safe_filename),
         _ => {
             return CommandResult::err(format!(
                 "Unknown storage category: '{}'. Valid categories: originals, edited, thumbnails, videos",

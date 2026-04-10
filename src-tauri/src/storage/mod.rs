@@ -116,7 +116,12 @@ impl StoragePathResolver {
     /// - `noext` → `noext_thumb`
     pub fn thumbnail_filename(original_filename: &str) -> String {
         let path = Path::new(original_filename);
-        match (path.file_stem(), path.extension()) {
+        let file_name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let name_path = Path::new(&file_name);
+        match (name_path.file_stem(), name_path.extension()) {
             (Some(stem), Some(ext)) => {
                 format!("{}_thumb.{}", stem.to_string_lossy(), ext.to_string_lossy())
             }
@@ -211,6 +216,30 @@ mod tests {
         assert_eq!(
             StoragePathResolver::thumbnail_filename("noext"),
             "noext_thumb"
+        );
+    }
+
+    #[test]
+    fn test_thumbnail_filename_with_subdirectory() {
+        assert_eq!(
+            StoragePathResolver::thumbnail_filename("subdir/capture_001.png"),
+            "capture_001_thumb.png"
+        );
+    }
+
+    #[test]
+    fn test_thumbnail_filename_with_deep_subdirectory() {
+        assert_eq!(
+            StoragePathResolver::thumbnail_filename("a/b/c/photo.jpg"),
+            "photo_thumb.jpg"
+        );
+    }
+
+    #[test]
+    fn test_thumbnail_filename_with_path_traversal() {
+        assert_eq!(
+            StoragePathResolver::thumbnail_filename("../../../etc/passwd"),
+            "passwd_thumb"
         );
     }
 
