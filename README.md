@@ -1,94 +1,118 @@
 # AmeCapture
 
-Windows向けのローカル完結型スクリーンキャプチャアプリ。
-Screenpressoライクですが、クラウド連携は実装しません。
-ワークスペース機能による撮影画像の管理・編集に特化しています。
+A local screen capture application built with **Rust + Tauri v2** and **React + TypeScript**.
 
-## 前提
-
-- Windows 10 / 11
-- .NET 9 SDK
-- SQLite
-
-## ソリューション構成
+## Architecture
 
 ```text
-AmeCapture.sln
- ├─ AmeCapture.App                 // WPFアプリ本体 (View / ViewModel)
- ├─ AmeCapture.Application         // UseCase, Serviceインターフェース, DTO
- ├─ AmeCapture.Domain              // Entity, Enum, ValueObject
- ├─ AmeCapture.Infrastructure      // SQLite, FileStorage, Logging, OS連携
- ├─ AmeCapture.Capture             // 画面キャプチャ関連
- ├─ AmeCapture.Editor              // 画像編集関連
- ├─ AmeCapture.Workspace           // ワークスペース関連
- ├─ AmeCapture.Shared              // 共通ユーティリティ
- └─ AmeCapture.Tests               // テスト (xUnit)
+AmeCapture/
+├── src/                        # Frontend (React + TypeScript)
+│   ├── main.tsx               # Entry point
+│   ├── App.tsx                # Root component
+│   ├── pages/                 # Page components
+│   │   ├── WorkspacePage.tsx  # Capture history browser
+│   │   ├── EditorPage.tsx     # Image annotation editor
+│   │   └── SettingsPage.tsx   # Application settings
+│   ├── components/            # Reusable UI components
+│   │   ├── ThumbnailGrid.tsx  # Image thumbnail grid
+│   │   ├── Toolbar.tsx        # Main toolbar
+│   │   ├── SearchBar.tsx      # Search/filter bar
+│   │   └── DetailPanel.tsx    # Item detail panel
+│   ├── stores/                # Zustand state stores
+│   ├── hooks/                 # Custom React hooks
+│   ├── types/                 # TypeScript type definitions
+│   └── lib/                   # Utility functions
+├── src-tauri/                  # Backend (Rust + Tauri v2)
+│   ├── src/
+│   │   ├── main.rs            # Rust entry point
+│   │   ├── lib.rs             # Tauri app setup & plugin registration
+│   │   ├── commands/          # Tauri IPC command handlers
+│   │   │   ├── capture.rs     # Capture commands
+│   │   │   ├── workspace.rs   # Workspace CRUD commands
+│   │   │   ├── editor.rs      # Editor commands
+│   │   │   └── settings.rs    # Settings commands
+│   │   ├── capture/           # Screen capture logic (Win32 API)
+│   │   ├── workspace/         # Workspace item management
+│   │   ├── editor/            # Image editing tools
+│   │   ├── db/                # SQLite database (rusqlite)
+│   │   ├── config/            # App configuration
+│   │   └── utils/             # Error types & utilities
+│   ├── Cargo.toml             # Rust dependencies
+│   └── tauri.conf.json        # Tauri configuration
+├── package.json                # Node.js dependencies
+├── vite.config.ts              # Vite build config
+└── tsconfig.json               # TypeScript config
 ```
 
-## コマンド
+## Tech Stack
 
-### 復元
+### Frontend
 
-```shell
-dotnet restore AmeCapture.sln
+- **React 19** + **TypeScript 5.8**
+- **Tailwind CSS 4** for styling
+- **Zustand** for state management
+- **Lucide React** for icons
+- **Vite 6** for build tooling
+
+### Backend
+
+- **Rust** (Edition 2021)
+- **Tauri v2** for desktop app framework
+- **rusqlite** for SQLite database
+- **image** crate for image processing
+- **Win32 API** (via `windows` crate) for screen capture
+
+### Plugins
+
+- `tauri-plugin-clipboard-manager` - Clipboard operations
+- `tauri-plugin-global-shortcut` - Global hotkeys
+- `tauri-plugin-notification` - System notifications
+- `tauri-plugin-store` - Persistent key-value store
+
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18+)
+- [Rust](https://www.rust-lang.org/tools/install) (v1.70+)
+- [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/)
+
+### Install Dependencies
+
+```bash
+# Install frontend dependencies
+npm install
+
+# Build Rust dependencies (first time takes a while)
+cd src-tauri && cargo build
 ```
 
-### ビルド
+### Development
 
-```shell
-dotnet build AmeCapture.sln
+```bash
+# Start dev server (frontend + backend with hot reload)
+npm run tauri dev
 ```
 
-### リリースビルド
+### Build
 
-```shell
-dotnet build AmeCapture.sln -c Release
+```bash
+# Build production app
+npm run tauri build
 ```
 
-### 実行
+## Features (MVP)
 
-```shell
-dotnet run --project AmeCapture.App
-```
+- [x] Full screen capture
+- [x] Region capture
+- [x] Window capture
+- [x] Capture history (workspace)
+- [x] Image annotation (arrow, rectangle, mosaic)
+- [x] Undo/Redo
+- [x] Global hotkeys
+- [x] Clipboard copy
+- [x] Settings management
 
-### テスト
+## License
 
-```shell
-dotnet test AmeCapture.Tests
-```
-
-### テスト（詳細出力）
-
-```shell
-dotnet test AmeCapture.Tests --verbosity normal
-```
-
-## 保存先
-
-```text
-%LocalAppData%/AmeCapture/
- ├─ data/
- │   ├─ originals/      // キャプチャ原本
- │   ├─ edited/         // 編集済み画像
- │   ├─ thumbnails/     // サムネイル
- │   └─ videos/         // 動画（将来）
- ├─ db/                 // SQLiteデータベース
- ├─ logs/               // ログファイル
- └─ settings/           // 設定ファイル
-```
-
-## 技術スタック
-
-| 項目 | 技術 |
-| - | - |
-| UI | WPF (.NET 9) |
-| アーキテクチャ | MVVM |
-| DB | SQLite |
-| 画像処理 | SkiaSharp（予定） |
-| ログ | Serilog（予定） |
-| テスト | xUnit |
-| DI | Microsoft.Extensions.DependencyInjection |
-
-## ライセンス
-
-このプロジェクトのライセンスについては LICENSE ファイルを参照してください。
+See [LICENSE](LICENSE) for details.

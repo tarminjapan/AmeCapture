@@ -1,18 +1,41 @@
-## .NET
-bin/
-obj/
-*.user
-*.suo
-*.cache
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Rust / Cargo
+src-tauri/target/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log
+npm-debug.log*
 
-## IDE
-.vs/
-.vscode/
-*.DotSettings.user
+# Editor
+*.sublime-project
+*.sublime-workspace
 
-## Build
-artifacts/
+# Old C# project files (kept for reference but not built)
+# *.sln
+# *.csproj
 
-## App data
-*.db
+# Tauri
+src-tauri/Cargo.lock
