@@ -17,7 +17,8 @@ export default function WorkspacePage() {
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const setSelectedItemIds = useWorkspaceStore((s) => s.setSelectedItemIds);
 
-  const { loadItems, deleteItem, toggleFavorite } = useWorkspace();
+  const { loadItems, deleteItem, toggleFavorite, renameItem, showInFolder, copyImageToClipboard } =
+    useWorkspace();
   const [showDetail, setShowDetail] = useState(false);
 
   useEffect(() => {
@@ -144,6 +145,9 @@ export default function WorkspacePage() {
             onClose={() => setShowDetail(false)}
             onToggleFavorite={toggleFavorite}
             onDelete={deleteItem}
+            onRename={renameItem}
+            onShowInFolder={showInFolder}
+            onCopyToClipboard={copyImageToClipboard}
           />
         )}
       </div>
