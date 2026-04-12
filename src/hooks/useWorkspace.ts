@@ -57,10 +57,28 @@ export function useWorkspace() {
     }
   };
 
+  const showInFolder = async (path: string) => {
+    try {
+      await invoke<CommandResult<null>>('show_item_in_folder', { path });
+    } catch (error) {
+      console.error('Failed to show item in folder:', error);
+    }
+  };
+
+  const copyImageToClipboard = async (path: string) => {
+    try {
+      await invoke<CommandResult<null>>('copy_image_to_clipboard', { path });
+    } catch (error) {
+      console.error('Failed to copy image to clipboard:', error);
+    }
+  };
+
   return {
     loadItems,
     deleteItem,
     renameItem,
     toggleFavorite,
+    showInFolder,
+    copyImageToClipboard,
   };
 }

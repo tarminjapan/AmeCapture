@@ -99,6 +99,8 @@ pub fn run() {
             commands::workspace::delete_workspace_item,
             commands::workspace::rename_workspace_item,
             commands::workspace::toggle_favorite,
+            commands::workspace::show_item_in_folder,
+            commands::workspace::copy_image_to_clipboard,
             commands::editor::save_edit,
             commands::editor::undo,
             commands::editor::redo,

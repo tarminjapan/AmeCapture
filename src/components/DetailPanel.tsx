@@ -1,6 +1,7 @@
+import { useState, useRef, useEffect } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
-import { X, Star, Copy, FolderOpen, Trash2, Edit3 } from 'lucide-react';
+import { X, Star, Copy, FolderOpen, Trash2, Edit3, Check } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
 
 interface DetailPanelProps {
@@ -8,15 +9,89 @@ interface DetailPanelProps {
   onClose: () => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, title: string) => void;
+  onShowInFolder: (path: string) => void;
+  onCopyToClipboard: (path: string) => void;
 }
 
-export function DetailPanel({ item, onClose, onToggleFavorite, onDelete }: DetailPanelProps) {
+export function DetailPanel({
+  item,
+  onClose,
+  onToggleFavorite,
+  onDelete,
+  onRename,
+  onShowInFolder,
+  onCopyToClipboard,
+}: DetailPanelProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(item.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setEditTitle(item.title);
+    setIsEditing(false);
+  }, [item.id, item.title]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleTitleSubmit = () => {
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== item.title) {
+      onRename(item.id, trimmed);
+    } else {
+      setEditTitle(item.title);
+    }
+    setIsEditing(false);
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleTitleSubmit();
+    } else if (e.key === 'Escape') {
+      setEditTitle(item.title);
+      setIsEditing(false);
+    }
+  };
+
   return (
     <div className="w-72 border-l border-border bg-card p-4 space-y-4 overflow-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-sm truncate">{item.title}</h3>
-        <button className="p-1 rounded hover:bg-accent" onClick={onClose}>
+      <div className="flex items-center justify-between gap-2">
+        {isEditing ? (
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <input
+              ref={inputRef}
+              className="flex-1 min-w-0 text-sm font-semibold bg-background border border-border rounded px-2 py-1 outline-none focus:border-primary"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onBlur={handleTitleSubmit}
+              onKeyDown={handleTitleKeyDown}
+            />
+            <button
+              className="p-1 rounded hover:bg-accent shrink-0"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleTitleSubmit();
+              }}
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <h3
+            className="font-semibold text-sm truncate cursor-pointer hover:text-primary"
+            onDoubleClick={() => setIsEditing(true)}
+            title="ダブルクリックでタイトルを編集"
+          >
+            {item.title}
+          </h3>
+        )}
+        <button className="p-1 rounded hover:bg-accent shrink-0" onClick={onClose}>
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -50,6 +125,10 @@ export function DetailPanel({ item, onClose, onToggleFavorite, onDelete }: Detai
           <span className="text-muted-foreground">更新日時</span>
           <span>{new Date(item.updatedAt).toLocaleString('ja-JP')}</span>
         </div>
+        <div>
+          <span className="text-muted-foreground text-xs">保存先</span>
+          <p className="text-xs break-all mt-0.5">{item.currentPath}</p>
+        </div>
       </div>
 
       {/* Actions */}
@@ -58,11 +137,21 @@ export function DetailPanel({ item, onClose, onToggleFavorite, onDelete }: Detai
           <Edit3 className="w-4 h-4" />
           編集
         </button>
-        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent">
+        <button
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => onCopyToClipboard(item.currentPath)}
+          disabled={item.type !== 'image'}
+          title={
+            item.type !== 'image' ? '画像アイテムのみコピー可能です' : 'クリップボードにコピー'
+          }
+        >
           <Copy className="w-4 h-4" />
           クリップボードにコピー
         </button>
-        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent">
+        <button
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent"
+          onClick={() => onShowInFolder(item.currentPath)}
+        >
           <FolderOpen className="w-4 h-4" />
           保存先を開く
         </button>
