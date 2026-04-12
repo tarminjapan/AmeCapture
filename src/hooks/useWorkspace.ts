@@ -57,17 +57,23 @@ export function useWorkspace() {
     }
   };
 
-  const showInFolder = async (path: string) => {
+  const showInFolder = async (id: string) => {
     try {
-      await invoke<CommandResult<null>>('show_item_in_folder', { path });
+      const result = await invoke<CommandResult<null>>('show_item_in_folder', { id });
+      if (!result.success) {
+        console.error('Failed to show item in folder:', result.error);
+      }
     } catch (error) {
       console.error('Failed to show item in folder:', error);
     }
   };
 
-  const copyImageToClipboard = async (path: string) => {
+  const copyImageToClipboard = async (id: string) => {
     try {
-      await invoke<CommandResult<null>>('copy_image_to_clipboard', { path });
+      const result = await invoke<CommandResult<null>>('copy_image_to_clipboard', { id });
+      if (!result.success) {
+        console.error('Failed to copy image to clipboard:', result.error);
+      }
     } catch (error) {
       console.error('Failed to copy image to clipboard:', error);
     }

@@ -10,8 +10,8 @@ interface DetailPanelProps {
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
-  onShowInFolder: (path: string) => void;
-  onCopyToClipboard: (path: string) => void;
+  onShowInFolder: (id: string) => void;
+  onCopyToClipboard: (id: string) => void;
 }
 
 export function DetailPanel({
@@ -139,7 +139,7 @@ export function DetailPanel({
         </button>
         <button
           className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={() => onCopyToClipboard(item.currentPath)}
+          onClick={() => onCopyToClipboard(item.id)}
           disabled={item.type !== 'image'}
           title={
             item.type !== 'image' ? '画像アイテムのみコピー可能です' : 'クリップボードにコピー'
@@ -150,7 +150,7 @@ export function DetailPanel({
         </button>
         <button
           className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent"
-          onClick={() => onShowInFolder(item.currentPath)}
+          onClick={() => onShowInFolder(item.id)}
         >
           <FolderOpen className="w-4 h-4" />
           保存先を開く

@@ -48,8 +48,14 @@ pub fn toggle_favorite(
 }
 
 #[tauri::command]
-pub fn show_item_in_folder(path: String) -> CommandResult<()> {
-    let path = Path::new(&path);
+pub fn show_item_in_folder(id: String, state: State<'_, AppState>) -> CommandResult<()> {
+    let item = match state.workspace_service.get_item(&id) {
+        Ok(Some(item)) => item,
+        Ok(None) => return CommandResult::err(format!("Item not found: {id}")),
+        Err(e) => return CommandResult::err(e.to_string()),
+    };
+
+    let path = Path::new(&item.current_path);
     if !path.exists() {
         return CommandResult::err(format!("Path does not exist: {}", path.to_string_lossy()));
     }
@@ -62,8 +68,18 @@ pub fn show_item_in_folder(path: String) -> CommandResult<()> {
 }
 
 #[tauri::command]
-pub fn copy_image_to_clipboard(app: tauri::AppHandle, path: String) -> CommandResult<()> {
-    let path = Path::new(&path);
+pub fn copy_image_to_clipboard(
+    app: tauri::AppHandle,
+    id: String,
+    state: State<'_, AppState>,
+) -> CommandResult<()> {
+    let item = match state.workspace_service.get_item(&id) {
+        Ok(Some(item)) => item,
+        Ok(None) => return CommandResult::err(format!("Item not found: {id}")),
+        Err(e) => return CommandResult::err(e.to_string()),
+    };
+
+    let path = Path::new(&item.current_path);
     if !path.exists() {
         return CommandResult::err(format!("File does not exist: {}", path.to_string_lossy()));
     }
