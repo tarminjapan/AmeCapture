@@ -123,6 +123,7 @@ pub fn run() {
             commands::tag::remove_tag_from_item,
             commands::tag::set_tags_for_item,
             commands::tag::get_items_by_tag,
+            commands::tag::get_all_tags_for_items,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

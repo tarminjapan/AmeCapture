@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::error::{AppError, AppResult};
 use crate::models::tag::Tag;
 use crate::models::workspace_item::WorkspaceItem;
@@ -13,6 +15,7 @@ pub trait TagService: Send + Sync {
     fn remove_tag_from_item(&self, item_id: &str, tag_id: &str) -> AppResult<()>;
     fn set_tags_for_item(&self, item_id: &str, tag_ids: &[String]) -> AppResult<()>;
     fn get_items_by_tag(&self, tag_id: &str) -> AppResult<Vec<WorkspaceItem>>;
+    fn get_all_tags_for_items(&self, item_ids: &[String]) -> AppResult<HashMap<String, Vec<Tag>>>;
 }
 
 pub struct DefaultTagService<T: TagRepository, W: WorkspaceRepository> {
@@ -96,13 +99,12 @@ impl<T: TagRepository, W: WorkspaceRepository> TagService for DefaultTagService<
     fn get_items_by_tag(&self, tag_id: &str) -> AppResult<Vec<WorkspaceItem>> {
         tracing::debug!("Fetching items for tag: {}", tag_id);
         let item_ids = self.tag_repo.get_item_ids_by_tag(tag_id)?;
-        let mut items = Vec::with_capacity(item_ids.len());
-        for id in &item_ids {
-            if let Some(item) = self.workspace_repo.get_by_id(id)? {
-                items.push(item);
-            }
-        }
-        Ok(items)
+        self.workspace_repo.get_by_ids(&item_ids)
+    }
+
+    fn get_all_tags_for_items(&self, item_ids: &[String]) -> AppResult<HashMap<String, Vec<Tag>>> {
+        tracing::debug!("Fetching tags for {} items", item_ids.len());
+        self.tag_repo.get_all_tags_for_items(item_ids)
     }
 }
 

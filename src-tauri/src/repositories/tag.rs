@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use rusqlite::params;
@@ -17,6 +18,10 @@ pub trait TagRepository: Send + Sync {
     fn remove_tag_from_item(&self, item_id: &str, tag_id: &str) -> AppResult<()>;
     fn set_tags_for_item(&self, item_id: &str, tag_ids: &[String]) -> AppResult<()>;
     fn get_item_ids_by_tag(&self, tag_id: &str) -> AppResult<Vec<String>>;
+    fn get_all_tags_for_items(
+        &self,
+        item_ids: &[String],
+    ) -> AppResult<std::collections::HashMap<String, Vec<Tag>>>;
 }
 
 /// SQLite implementation of TagRepository
@@ -115,8 +120,7 @@ impl TagRepository for SqliteTagRepository {
                     name: row.get(1)?,
                 })
             })?
-            .filter_map(|t| t.ok())
-            .collect();
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(tags)
     }
@@ -140,17 +144,19 @@ impl TagRepository for SqliteTagRepository {
     }
 
     fn set_tags_for_item(&self, item_id: &str, tag_ids: &[String]) -> AppResult<()> {
-        let conn = self.conn.lock().unwrap();
-        conn.execute(
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        tx.execute(
             "DELETE FROM workspace_item_tags WHERE workspace_item_id = ?1",
             params![item_id],
         )?;
         for tag_id in tag_ids {
-            conn.execute(
+            tx.execute(
                 "INSERT OR IGNORE INTO workspace_item_tags (workspace_item_id, tag_id) VALUES (?1, ?2)",
                 params![item_id, tag_id],
             )?;
         }
+        tx.commit()?;
         Ok(())
     }
 
@@ -161,10 +167,52 @@ impl TagRepository for SqliteTagRepository {
 
         let ids = stmt
             .query_map(params![tag_id], |row| row.get(0))?
-            .filter_map(|r| r.ok())
-            .collect();
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(ids)
+    }
+
+    fn get_all_tags_for_items(&self, item_ids: &[String]) -> AppResult<HashMap<String, Vec<Tag>>> {
+        if item_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let conn = self.conn.lock().unwrap();
+        let placeholders: Vec<String> = item_ids
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("?{}", i + 1))
+            .collect();
+        let sql = format!(
+            "SELECT wit.workspace_item_id, t.id, t.name
+             FROM workspace_item_tags wit
+             INNER JOIN tags t ON t.id = wit.tag_id
+             WHERE wit.workspace_item_id IN ({})
+             ORDER BY t.name",
+            placeholders.join(", ")
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let param_refs: Vec<&dyn rusqlite::ToSql> = item_ids
+            .iter()
+            .map(|id| id as &dyn rusqlite::ToSql)
+            .collect();
+        let mut map: HashMap<String, Vec<Tag>> = HashMap::new();
+        for id in item_ids {
+            map.entry(id.clone()).or_default();
+        }
+        let rows = stmt.query_map(param_refs.as_slice(), |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                Tag {
+                    id: row.get(1)?,
+                    name: row.get(2)?,
+                },
+            ))
+        })?;
+        for row in rows {
+            let (item_id, tag) = row?;
+            map.entry(item_id).or_default().push(tag);
+        }
+        Ok(map)
     }
 }
 

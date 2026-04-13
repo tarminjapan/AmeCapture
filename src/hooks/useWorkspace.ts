@@ -12,18 +12,20 @@ export function useWorkspace() {
       const result = await invoke<CommandResult<WorkspaceItem[]>>('get_workspace_items');
       if (result.success && result.data) {
         setItems(result.data);
-        const tagStore = useTagStore.getState();
-        for (const item of result.data) {
-          try {
-            const tagResult = await invoke<CommandResult<Tag[]>>('get_tags_for_item', {
-              itemId: item.id,
-            });
-            if (tagResult.success && tagResult.data) {
-              tagStore.setItemTags(item.id, tagResult.data);
+        try {
+          const itemIds = result.data.map((item) => item.id);
+          const tagsResult = await invoke<CommandResult<Record<string, Tag[]>>>(
+            'get_all_tags_for_items',
+            { itemIds },
+          );
+          if (tagsResult.success && tagsResult.data) {
+            const tagStore = useTagStore.getState();
+            for (const [itemId, tags] of Object.entries(tagsResult.data)) {
+              tagStore.setItemTags(itemId, tags);
             }
-          } catch {
-            // skip if tags fail for one item
           }
+        } catch {
+          // skip if tags fail
         }
       }
     } catch (error) {

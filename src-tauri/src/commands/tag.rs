@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use tauri::State;
 
 use crate::app_state::AppState;
@@ -80,6 +82,17 @@ pub fn get_items_by_tag(
 ) -> CommandResult<Vec<WorkspaceItem>> {
     match state.tag_service.get_items_by_tag(&tag_id) {
         Ok(items) => CommandResult::ok(items),
+        Err(e) => CommandResult::err(e.to_string()),
+    }
+}
+
+#[tauri::command]
+pub fn get_all_tags_for_items(
+    item_ids: Vec<String>,
+    state: State<'_, AppState>,
+) -> CommandResult<HashMap<String, Vec<Tag>>> {
+    match state.tag_service.get_all_tags_for_items(&item_ids) {
+        Ok(map) => CommandResult::ok(map),
         Err(e) => CommandResult::err(e.to_string()),
     }
 }
