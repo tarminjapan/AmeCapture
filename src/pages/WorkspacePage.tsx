@@ -60,11 +60,11 @@ export default function WorkspacePage() {
     result.sort((a, b) => {
       let cmp = 0;
       if (sortBy === 'title') {
-        cmp = a.title.localeCompare(b.title);
+        cmp = (a.title ?? '').localeCompare(b.title ?? '');
       } else if (sortBy === 'updatedAt') {
-        cmp = a.updatedAt.localeCompare(b.updatedAt);
+        cmp = (a.updatedAt ?? '').localeCompare(b.updatedAt ?? '');
       } else {
-        cmp = a.createdAt.localeCompare(b.createdAt);
+        cmp = (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
       }
       return sortOrder === 'asc' ? cmp : -cmp;
     });
