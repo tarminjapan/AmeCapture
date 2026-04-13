@@ -18,11 +18,13 @@ use crate::app_state::AppState;
 use crate::db::connection::create_connection;
 use crate::db::migrations::run_migrations;
 use crate::repositories::settings::SqliteSettingsRepository;
+use crate::repositories::tag::SqliteTagRepository;
 use crate::repositories::workspace::SqliteWorkspaceRepository;
 use crate::services::capture::DefaultCaptureService;
 use crate::services::editor::DefaultEditorService;
 use crate::services::settings::DefaultSettingsService;
 use crate::services::storage::DefaultStorageService;
+use crate::services::tag::DefaultTagService;
 use crate::services::thumbnail::DefaultThumbnailService;
 use crate::services::workspace::DefaultWorkspaceService;
 
@@ -75,12 +77,17 @@ pub fn run() {
             // === Build DI Container ===
             let workspace_repo = SqliteWorkspaceRepository::new(Arc::clone(&conn));
             let settings_repo = SqliteSettingsRepository::new(Arc::clone(&conn));
+            let tag_repo = SqliteTagRepository::new(Arc::clone(&conn));
 
             let storage_service = DefaultStorageService::new(save_path);
 
             let app_state = AppState {
                 capture_service: Box::new(DefaultCaptureService::new()),
                 workspace_service: Box::new(DefaultWorkspaceService::new(workspace_repo)),
+                tag_service: Box::new(DefaultTagService::new(
+                    tag_repo,
+                    SqliteWorkspaceRepository::new(Arc::clone(&conn)),
+                )),
                 settings_service: Box::new(DefaultSettingsService::new(settings_repo)),
                 editor_service: Box::new(DefaultEditorService::new()),
                 thumbnail_service: Box::new(DefaultThumbnailService::new()),
@@ -108,6 +115,14 @@ pub fn run() {
             commands::settings::save_settings,
             commands::storage::get_storage_paths,
             commands::storage::resolve_storage_path,
+            commands::tag::get_tags,
+            commands::tag::create_tag,
+            commands::tag::delete_tag,
+            commands::tag::get_tags_for_item,
+            commands::tag::add_tag_to_item,
+            commands::tag::remove_tag_from_item,
+            commands::tag::set_tags_for_item,
+            commands::tag::get_items_by_tag,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

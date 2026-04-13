@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceItem, CommandResult } from '@/types';
+import type { WorkspaceItem, Tag, CommandResult } from '@/types';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { useTagStore } from '@/stores/tagStore';
 
 export function useWorkspace() {
   const { setItems, removeItem, updateItem, setLoading } = useWorkspaceStore();
@@ -11,6 +12,19 @@ export function useWorkspace() {
       const result = await invoke<CommandResult<WorkspaceItem[]>>('get_workspace_items');
       if (result.success && result.data) {
         setItems(result.data);
+        const tagStore = useTagStore.getState();
+        for (const item of result.data) {
+          try {
+            const tagResult = await invoke<CommandResult<Tag[]>>('get_tags_for_item', {
+              itemId: item.id,
+            });
+            if (tagResult.success && tagResult.data) {
+              tagStore.setItemTags(item.id, tagResult.data);
+            }
+          } catch {
+            // skip if tags fail for one item
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load workspace items:', error);

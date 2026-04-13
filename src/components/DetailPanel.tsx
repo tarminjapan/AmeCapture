@@ -3,6 +3,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
 import { X, Star, Copy, FolderOpen, Trash2, Edit3, Check } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
+import { TagInput } from '@/components/TagInput';
 
 interface DetailPanelProps {
   item: WorkspaceItem;
@@ -128,6 +129,14 @@ export function DetailPanel({
         <div>
           <span className="text-muted-foreground text-xs">保存先</span>
           <p className="text-xs break-all mt-0.5">{item.currentPath}</p>
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div>
+        <span className="text-muted-foreground text-xs">タグ</span>
+        <div className="mt-1">
+          <TagInput itemId={item.id} />
         </div>
       </div>
 

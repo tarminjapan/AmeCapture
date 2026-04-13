@@ -2,6 +2,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
 import { Star, StarOff, Trash2, ImageIcon, Film } from 'lucide-react';
 import { MEDIA_TYPE_CONFIG } from '@/lib/mediaTypeConfig';
+import { useTagStore } from '@/stores/tagStore';
 
 interface ThumbnailGridProps {
   items: WorkspaceItem[];
@@ -18,6 +19,8 @@ export function ThumbnailGrid({
   onToggleFavorite,
   onDelete,
 }: ThumbnailGridProps) {
+  const itemTags = useTagStore((s) => s.itemTags);
+
   const handleClick = (id: string, e: React.MouseEvent) => {
     if (e.ctrlKey || e.metaKey) {
       const newIds = selectedIds.includes(id)
@@ -88,6 +91,18 @@ export function ThumbnailGrid({
             <p className="text-xs text-muted-foreground">
               {new Date(item.createdAt).toLocaleString('ja-JP')}
             </p>
+            {(itemTags[item.id] ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-0.5 mt-1">
+                {(itemTags[item.id] ?? []).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="px-1.5 py-0 text-[10px] rounded-full bg-primary/10 text-primary"
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Actions overlay */}
