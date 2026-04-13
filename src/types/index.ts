@@ -5,7 +5,7 @@ export interface WorkspaceItem {
   type: 'image' | 'video';
   originalPath: string;
   currentPath: string;
-  thumbnailPath: string;
+  thumbnailPath: string | null;
   title: string;
   createdAt: string;
   updatedAt: string;
