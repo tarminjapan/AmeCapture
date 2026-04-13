@@ -69,7 +69,7 @@ fn rename_file_on_disk(old_path: &str, new_stem: &str) -> AppResult<String> {
     }
 
     if new_path.exists() {
-        for i in 1..100u32 {
+        for i in 1..1000u32 {
             let candidate_name = format!("{}_{}{}", safe_stem, i, extension);
             let candidate = parent.join(&candidate_name);
             if !candidate.exists() {
@@ -79,7 +79,10 @@ fn rename_file_on_disk(old_path: &str, new_stem: &str) -> AppResult<String> {
         }
         return Err(AppError::Io(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
-            format!("Could not find unique filename for: {}", new_stem),
+            format!(
+                "Could not find unique filename after 999 attempts for base name: {}",
+                new_stem
+            ),
         )));
     }
 
@@ -117,14 +120,16 @@ impl<R: WorkspaceRepository> WorkspaceService for DefaultWorkspaceService<R> {
 
     fn delete_item(&self, id: &str) -> AppResult<()> {
         tracing::info!("Deleting workspace item: {}", id);
-        if let Some(item) = self.repo.get_by_id(id)? {
+        let item_opt = self.repo.get_by_id(id)?;
+        self.repo.delete(id)?;
+        if let Some(item) = item_opt {
             delete_file_if_exists(&item.current_path);
             delete_file_if_exists(&item.original_path);
             if let Some(thumb) = &item.thumbnail_path {
                 delete_file_if_exists(thumb);
             }
         }
-        self.repo.delete(id)
+        Ok(())
     }
 
     fn rename_item(&self, id: &str, title: &str) -> AppResult<WorkspaceItem> {
@@ -137,28 +142,32 @@ impl<R: WorkspaceRepository> WorkspaceService for DefaultWorkspaceService<R> {
         let safe_title = sanitize_filename(title);
         let same_file = item.original_path == item.current_path;
 
+        let old_current = item.current_path.clone();
+        let old_original = item.original_path.clone();
+        let old_thumbnail = item.thumbnail_path.clone();
+
         item.current_path = rename_file_on_disk(&item.current_path, &safe_title)?;
 
         if same_file {
             item.original_path = item.current_path.clone();
         } else {
-            let orig = item.original_path.clone();
-            item.original_path = match rename_file_on_disk(&orig, &safe_title) {
-                Ok(p) => p,
-                Err(e) => {
-                    tracing::warn!("Failed to rename original file: {}", e);
-                    orig
-                }
-            };
+            item.original_path =
+                rename_file_on_disk(&item.original_path, &safe_title).map_err(|e| {
+                    tracing::error!(
+                        "Failed to rename original file, rolling back current file: {}",
+                        e
+                    );
+                    let _ = std::fs::rename(&item.current_path, &old_current);
+                    e
+                })?;
         }
 
-        let thumb_path = item.thumbnail_path.clone();
-        item.thumbnail_path = match thumb_path {
-            Some(thumb) => match rename_thumbnail_on_disk(&thumb, &safe_title) {
+        item.thumbnail_path = match &old_thumbnail {
+            Some(thumb) => match rename_thumbnail_on_disk(thumb, &safe_title) {
                 Ok(p) => Some(p),
                 Err(e) => {
                     tracing::warn!("Failed to rename thumbnail file: {}", e);
-                    Some(thumb)
+                    Some(thumb.clone())
                 }
             },
             None => None,
@@ -166,8 +175,28 @@ impl<R: WorkspaceRepository> WorkspaceService for DefaultWorkspaceService<R> {
 
         item.title = title.to_string();
         item.updated_at = chrono::Utc::now().to_rfc3339();
-        self.repo.update(&item)?;
-        Ok(item)
+
+        match self.repo.update(&item) {
+            Ok(()) => Ok(item),
+            Err(db_err) => {
+                tracing::error!(
+                    "DB update failed after file rename, rolling back: {}",
+                    db_err
+                );
+                let _ = std::fs::rename(&item.current_path, &old_current);
+                if !same_file {
+                    let _ = std::fs::rename(&item.original_path, &old_original);
+                }
+                if let Some(ref new_thumb) = item.thumbnail_path {
+                    if let Some(ref old_thumb) = old_thumbnail {
+                        if new_thumb != old_thumb {
+                            let _ = std::fs::rename(new_thumb, old_thumb);
+                        }
+                    }
+                }
+                Err(db_err)
+            }
+        }
     }
 
     fn toggle_favorite(&self, id: &str, is_favorite: bool) -> AppResult<()> {
