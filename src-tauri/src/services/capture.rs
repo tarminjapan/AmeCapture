@@ -68,6 +68,80 @@ impl CaptureService for DefaultCaptureService {
 }
 
 #[cfg(target_os = "windows")]
+mod gdi_guard {
+    use windows::Win32::Graphics::Gdi::{
+        DeleteDC, DeleteObject, ReleaseDC, SelectObject, HBITMAP, HDC, HGDIOBJ,
+    };
+
+    pub struct ScreenDcGuard {
+        dc: HDC,
+        released: bool,
+    }
+
+    impl ScreenDcGuard {
+        pub fn new(dc: HDC) -> Self {
+            Self {
+                dc,
+                released: false,
+            }
+        }
+
+        pub fn get(&self) -> HDC {
+            self.dc
+        }
+
+        pub fn release(mut self) {
+            unsafe {
+                let _ = ReleaseDC(None, self.dc);
+            }
+            self.released = true;
+        }
+    }
+
+    impl Drop for ScreenDcGuard {
+        fn drop(&mut self) {
+            if !self.released {
+                unsafe {
+                    let _ = ReleaseDC(None, self.dc);
+                }
+            }
+        }
+    }
+
+    pub struct GdiCleanup {
+        mem_dc: Option<HDC>,
+        bitmap: Option<HBITMAP>,
+        old_obj: Option<HGDIOBJ>,
+    }
+
+    impl GdiCleanup {
+        pub fn new(mem_dc: HDC, bitmap: HBITMAP, old_obj: HGDIOBJ) -> Self {
+            Self {
+                mem_dc: Some(mem_dc),
+                bitmap: Some(bitmap),
+                old_obj: Some(old_obj),
+            }
+        }
+    }
+
+    impl Drop for GdiCleanup {
+        fn drop(&mut self) {
+            unsafe {
+                if let (Some(dc), Some(old)) = (self.mem_dc, self.old_obj) {
+                    let _ = SelectObject(dc, old);
+                }
+                if let Some(bmp) = self.bitmap.take() {
+                    let _ = DeleteObject(bmp.into());
+                }
+                if let Some(dc) = self.mem_dc.take() {
+                    let _ = DeleteDC(dc);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
 fn capture_screen(save_path: &str) -> AppResult<CaptureResult> {
     use windows::Win32::Graphics::Gdi::*;
     use windows::Win32::UI::WindowsAndMessaging::*;
@@ -78,21 +152,31 @@ fn capture_screen(save_path: &str) -> AppResult<CaptureResult> {
     }
 
     unsafe {
-        let screen_dc = GetDC(None);
+        let screen_dc = gdi_guard::ScreenDcGuard::new(GetDC(None));
         let width = GetSystemMetrics(SM_CXSCREEN);
         let height = GetSystemMetrics(SM_CYSCREEN);
 
         if width <= 0 || height <= 0 {
-            let _ = ReleaseDC(None, screen_dc);
             return Err(AppError::Capture("Invalid screen dimensions".into()));
         }
 
-        let mem_dc = CreateCompatibleDC(Some(screen_dc));
-        let bitmap = CreateCompatibleBitmap(screen_dc, width, height);
-        let _old = SelectObject(mem_dc, bitmap.into());
+        let mem_dc = CreateCompatibleDC(Some(screen_dc.get()));
+        let bitmap = CreateCompatibleBitmap(screen_dc.get(), width, height);
+        let old = SelectObject(mem_dc, bitmap.into());
 
-        if let Err(e) = BitBlt(mem_dc, 0, 0, width, height, Some(screen_dc), 0, 0, SRCCOPY) {
-            let _ = ReleaseDC(None, screen_dc);
+        let _gdi = gdi_guard::GdiCleanup::new(mem_dc, bitmap, old);
+
+        if let Err(e) = BitBlt(
+            mem_dc,
+            0,
+            0,
+            width,
+            height,
+            Some(screen_dc.get()),
+            0,
+            0,
+            SRCCOPY,
+        ) {
             return Err(AppError::Capture(format!("BitBlt failed: {e}")));
         }
 
@@ -117,7 +201,6 @@ fn capture_screen(save_path: &str) -> AppResult<CaptureResult> {
         );
 
         if scan_lines == 0 {
-            let _ = ReleaseDC(None, screen_dc);
             return Err(AppError::Capture("GetDIBits returned 0 scan lines".into()));
         }
 
@@ -125,26 +208,15 @@ fn capture_screen(save_path: &str) -> AppResult<CaptureResult> {
             chunk.swap(0, 2);
         }
 
-        let img = match image::RgbaImage::from_raw(width as u32, height as u32, pixels) {
-            Some(i) => i,
-            None => {
-                let _ = ReleaseDC(None, screen_dc);
-                return Err(AppError::Capture(
-                    "Failed to create image from captured pixels".into(),
-                ));
-            }
-        };
+        let img =
+            image::RgbaImage::from_raw(width as u32, height as u32, pixels).ok_or_else(|| {
+                AppError::Capture("Failed to create image from captured pixels".into())
+            })?;
 
-        if let Err(e) = img.save_with_format(save, image::ImageFormat::Png) {
-            let _ = ReleaseDC(None, screen_dc);
-            return Err(AppError::Capture(format!(
-                "Failed to save captured image: {e}"
-            )));
-        }
+        img.save_with_format(save, image::ImageFormat::Png)
+            .map_err(|e| AppError::Capture(format!("Failed to save captured image: {e}")))?;
 
-        let _ = DeleteObject(bitmap.into());
-        let _ = DeleteDC(mem_dc);
-        let _ = ReleaseDC(None, screen_dc);
+        screen_dc.release();
 
         Ok(CaptureResult {
             file_path: save_path.to_string(),

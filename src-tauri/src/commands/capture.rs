@@ -36,8 +36,15 @@ pub fn capture(
             };
 
             let edited_path = state.storage_service.resolve_edited_path(&filename);
+            let edited_str = match edited_path.to_str() {
+                Some(s) => s.to_string(),
+                None => return CommandResult::err("Invalid edited path encoding"),
+            };
+
             if let Err(e) = std::fs::copy(&original_path, &edited_path) {
-                tracing::warn!("Failed to copy original to edited directory: {}", e);
+                return CommandResult::err(format!(
+                    "Failed to copy original to edited directory: {e}"
+                ));
             }
 
             let thumb_path = state.storage_service.resolve_thumbnail_path(&filename);
@@ -50,7 +57,7 @@ pub fn capture(
                 .thumbnail_service
                 .generate_thumbnail(&original_str, &thumb_str)
             {
-                tracing::warn!("Failed to generate thumbnail: {}", e);
+                return CommandResult::err(format!("Failed to generate thumbnail: {e}"));
             }
 
             let now = chrono::Utc::now().to_rfc3339();
@@ -63,7 +70,7 @@ pub fn capture(
                 id: uuid::Uuid::new_v4().to_string(),
                 item_type: WorkspaceItemType::Image,
                 original_path: original_str,
-                current_path: edited_path.to_string_lossy().to_string(),
+                current_path: edited_str,
                 thumbnail_path: Some(thumb_str),
                 title,
                 created_at: now.clone(),
