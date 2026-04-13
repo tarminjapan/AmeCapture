@@ -8,6 +8,7 @@ interface WorkspaceState {
   sortBy: 'createdAt' | 'updatedAt' | 'title';
   sortOrder: 'asc' | 'desc';
   isLoading: boolean;
+  showFavoritesOnly: boolean;
 
   // Actions
   setItems: (items: WorkspaceItem[]) => void;
@@ -19,6 +20,7 @@ interface WorkspaceState {
   setSortBy: (sortBy: 'createdAt' | 'updatedAt' | 'title') => void;
   setSortOrder: (order: 'asc' | 'desc') => void;
   setLoading: (loading: boolean) => void;
+  setShowFavoritesOnly: (show: boolean) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
@@ -28,6 +30,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   sortBy: 'createdAt',
   sortOrder: 'desc',
   isLoading: false,
+  showFavoritesOnly: false,
 
   setItems: (items) => set({ items }),
   addItem: (item) => set((state) => ({ items: [item, ...state.items] })),
@@ -45,4 +48,5 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   setSortBy: (sortBy) => set({ sortBy }),
   setSortOrder: (order) => set({ sortOrder: order }),
   setLoading: (loading) => set({ isLoading: loading }),
+  setShowFavoritesOnly: (show) => set({ showFavoritesOnly: show }),
 }));

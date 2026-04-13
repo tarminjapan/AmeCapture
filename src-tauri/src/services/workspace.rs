@@ -374,4 +374,29 @@ mod tests {
         assert!(result.contains("target_1.txt"));
         assert!(Path::new(&result).exists());
     }
+
+    #[test]
+    fn test_toggle_favorite() {
+        let (service, temp_dir) = setup_service();
+        let item = sample_item_with_files("id-1", temp_dir.path());
+        service.add_item(&item).unwrap();
+
+        let found = service.get_item("id-1").unwrap().unwrap();
+        assert!(!found.is_favorite);
+
+        service.toggle_favorite("id-1", true).unwrap();
+        let found = service.get_item("id-1").unwrap().unwrap();
+        assert!(found.is_favorite);
+
+        service.toggle_favorite("id-1", false).unwrap();
+        let found = service.get_item("id-1").unwrap().unwrap();
+        assert!(!found.is_favorite);
+    }
+
+    #[test]
+    fn test_toggle_favorite_nonexistent_fails() {
+        let (service, _temp_dir) = setup_service();
+        let result = service.toggle_favorite("nonexistent", true);
+        assert!(result.is_err());
+    }
 }
