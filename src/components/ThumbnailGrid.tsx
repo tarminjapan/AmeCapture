@@ -73,6 +73,13 @@ export function ThumbnailGrid({
             >
               {MEDIA_TYPE_CONFIG[item.type].label}
             </span>
+
+            {/* Favorite indicator - always visible */}
+            {item.isFavorite && (
+              <span className="absolute bottom-1 left-1 p-0.5 rounded bg-background/80">
+                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+              </span>
+            )}
           </div>
 
           {/* Info */}

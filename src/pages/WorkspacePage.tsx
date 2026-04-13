@@ -5,7 +5,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { ThumbnailGrid } from '@/components/ThumbnailGrid';
 import { DetailPanel } from '@/components/DetailPanel';
 import { Toolbar } from '@/components/Toolbar';
-import { ImageOff, Settings } from 'lucide-react';
+import { ImageOff, Settings, Star } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
 
 export default function WorkspacePage() {
@@ -15,7 +15,9 @@ export default function WorkspacePage() {
   const sortBy = useWorkspaceStore((s) => s.sortBy);
   const sortOrder = useWorkspaceStore((s) => s.sortOrder);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
+  const showFavoritesOnly = useWorkspaceStore((s) => s.showFavoritesOnly);
   const setSelectedItemIds = useWorkspaceStore((s) => s.setSelectedItemIds);
+  const setShowFavoritesOnly = useWorkspaceStore((s) => s.setShowFavoritesOnly);
 
   const { loadItems, deleteItem, toggleFavorite, renameItem, showInFolder, copyImageToClipboard } =
     useWorkspace();
@@ -27,6 +29,10 @@ export default function WorkspacePage() {
 
   const filteredItems = useMemo(() => {
     let result = [...items];
+
+    if (showFavoritesOnly) {
+      result = result.filter((item) => item.isFavorite);
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -51,7 +57,7 @@ export default function WorkspacePage() {
     });
 
     return result;
-  }, [items, searchQuery, sortBy, sortOrder]);
+  }, [items, searchQuery, sortBy, sortOrder, showFavoritesOnly]);
 
   const selectedItem = useMemo(() => {
     if (selectedItemIds.length === 1) {
@@ -92,6 +98,15 @@ export default function WorkspacePage() {
           onCaptureWindow={handleCaptureWindow}
         />
         <div className="flex items-center gap-2">
+          <button
+            className={`p-1.5 rounded-md hover:bg-accent ${showFavoritesOnly ? 'bg-accent text-yellow-500' : ''}`}
+            title={showFavoritesOnly ? 'すべて表示' : 'お気に入りのみ表示'}
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+          >
+            <Star
+              className={`w-4 h-4 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`}
+            />
+          </button>
           <SearchBar />
           <button className="p-1.5 rounded-md hover:bg-accent" title="設定">
             <Settings className="w-4 h-4" />
