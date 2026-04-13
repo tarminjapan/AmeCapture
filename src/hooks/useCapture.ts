@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { CaptureRegion, CaptureType, CommandResult } from '@/types';
+import type { CaptureRegion, CaptureType, CommandResult, WorkspaceItem } from '@/types';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 
 export function useCapture() {
@@ -7,13 +7,12 @@ export function useCapture() {
 
   const capture = async (type: CaptureType, region?: CaptureRegion) => {
     try {
-      const result = await invoke<CommandResult<string>>('capture', {
+      const result = await invoke<CommandResult<WorkspaceItem>>('capture', {
         type,
         region: region ?? null,
       });
       if (result.success && result.data) {
-        // TODO: Fetch the full WorkspaceItem from backend after capture
-        console.log('Capture saved:', result.data);
+        addItem(result.data);
       }
       return result;
     } catch (error) {
