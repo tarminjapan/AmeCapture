@@ -51,20 +51,20 @@ export default function WorkspacePage() {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (item) =>
-          item.title.toLowerCase().includes(q) ||
-          item.type.toLowerCase().includes(q) ||
-          getTypeLabel(item.type).includes(q),
+          (item.title ?? '').toLowerCase().includes(q) ||
+          (item.type ?? '').toLowerCase().includes(q) ||
+          getTypeLabel(item.type ?? 'image').includes(q),
       );
     }
 
     result.sort((a, b) => {
       let cmp = 0;
       if (sortBy === 'title') {
-        cmp = a.title.localeCompare(b.title);
+        cmp = (a.title ?? '').localeCompare(b.title ?? '');
       } else if (sortBy === 'updatedAt') {
-        cmp = a.updatedAt.localeCompare(b.updatedAt);
+        cmp = (a.updatedAt ?? '').localeCompare(b.updatedAt ?? '');
       } else {
-        cmp = a.createdAt.localeCompare(b.createdAt);
+        cmp = (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
       }
       return sortOrder === 'asc' ? cmp : -cmp;
     });

@@ -31,7 +31,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   searchQuery: '',
   sortBy: 'createdAt',
   sortOrder: 'desc',
-  isLoading: false,
+  isLoading: true,
   showFavoritesOnly: false,
   selectedTagIds: [],
 
