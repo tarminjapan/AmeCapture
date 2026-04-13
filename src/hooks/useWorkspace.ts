@@ -34,12 +34,18 @@ export function useWorkspace() {
 
   const renameItem = async (id: string, title: string) => {
     try {
-      const result = await invoke<CommandResult<null>>('rename_workspace_item', {
+      const result = await invoke<CommandResult<WorkspaceItem>>('rename_workspace_item', {
         id,
         title,
       });
-      if (result.success) {
-        updateItem(id, { title });
+      if (result.success && result.data) {
+        updateItem(id, {
+          title: result.data.title,
+          currentPath: result.data.currentPath,
+          originalPath: result.data.originalPath,
+          thumbnailPath: result.data.thumbnailPath,
+          updatedAt: result.data.updatedAt,
+        });
       }
     } catch (error) {
       console.error('Failed to rename item:', error);

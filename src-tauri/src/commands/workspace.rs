@@ -28,9 +28,9 @@ pub fn rename_workspace_item(
     id: String,
     title: String,
     state: State<'_, AppState>,
-) -> CommandResult<()> {
+) -> CommandResult<WorkspaceItem> {
     match state.workspace_service.rename_item(&id, &title) {
-        Ok(_) => CommandResult::success(),
+        Ok(item) => CommandResult::ok(item),
         Err(e) => CommandResult::err(e.to_string()),
     }
 }
