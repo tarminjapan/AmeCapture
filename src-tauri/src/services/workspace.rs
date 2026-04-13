@@ -45,7 +45,15 @@ fn sanitize_filename(title: &str) -> String {
     if trimmed.is_empty() {
         return "unnamed".to_string();
     }
-    trimmed.to_string()
+    let reserved = [
+        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+        "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    ];
+    if reserved.contains(&trimmed.to_uppercase().as_str()) {
+        format!("{}_", trimmed)
+    } else {
+        trimmed.to_string()
+    }
 }
 
 fn rename_file_on_disk(old_path: &str, new_stem: &str) -> AppResult<String> {
@@ -183,8 +191,10 @@ impl<R: WorkspaceRepository> WorkspaceService for DefaultWorkspaceService<R> {
                     "DB update failed after file rename, rolling back: {}",
                     db_err
                 );
-                let _ = std::fs::rename(&item.current_path, &old_current);
-                if !same_file {
+                if item.current_path != old_current {
+                    let _ = std::fs::rename(&item.current_path, &old_current);
+                }
+                if !same_file && item.original_path != old_original {
                     let _ = std::fs::rename(&item.original_path, &old_original);
                 }
                 if let Some(ref new_thumb) = item.thumbnail_path {
