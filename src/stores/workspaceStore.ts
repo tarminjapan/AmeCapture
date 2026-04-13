@@ -9,6 +9,7 @@ interface WorkspaceState {
   sortOrder: 'asc' | 'desc';
   isLoading: boolean;
   showFavoritesOnly: boolean;
+  selectedTagIds: string[];
 
   // Actions
   setItems: (items: WorkspaceItem[]) => void;
@@ -21,6 +22,7 @@ interface WorkspaceState {
   setSortOrder: (order: 'asc' | 'desc') => void;
   setLoading: (loading: boolean) => void;
   setShowFavoritesOnly: (show: boolean) => void;
+  setSelectedTagIds: (ids: string[]) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
@@ -31,6 +33,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   sortOrder: 'desc',
   isLoading: false,
   showFavoritesOnly: false,
+  selectedTagIds: [],
 
   setItems: (items) => set({ items }),
   addItem: (item) => set((state) => ({ items: [item, ...state.items] })),
@@ -49,4 +52,5 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   setSortOrder: (order) => set({ sortOrder: order }),
   setLoading: (loading) => set({ isLoading: loading }),
   setShowFavoritesOnly: (show) => set({ showFavoritesOnly: show }),
+  setSelectedTagIds: (ids) => set({ selectedTagIds: ids }),
 }));

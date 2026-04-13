@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { useTagStore } from '@/stores/tagStore';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { SearchBar } from '@/components/SearchBar';
 import { ThumbnailGrid } from '@/components/ThumbnailGrid';
 import { DetailPanel } from '@/components/DetailPanel';
 import { Toolbar } from '@/components/Toolbar';
+import { TagFilterBar } from '@/components/TagFilterBar';
 import { ImageOff, Settings, Star } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
 
@@ -16,8 +18,10 @@ export default function WorkspacePage() {
   const sortOrder = useWorkspaceStore((s) => s.sortOrder);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const showFavoritesOnly = useWorkspaceStore((s) => s.showFavoritesOnly);
+  const selectedTagIds = useWorkspaceStore((s) => s.selectedTagIds);
   const setSelectedItemIds = useWorkspaceStore((s) => s.setSelectedItemIds);
   const setShowFavoritesOnly = useWorkspaceStore((s) => s.setShowFavoritesOnly);
+  const itemTags = useTagStore((s) => s.itemTags);
 
   const { loadItems, deleteItem, toggleFavorite, renameItem, showInFolder, copyImageToClipboard } =
     useWorkspace();
@@ -32,6 +36,13 @@ export default function WorkspacePage() {
 
     if (showFavoritesOnly) {
       result = result.filter((item) => item.isFavorite);
+    }
+
+    if (selectedTagIds.length > 0) {
+      result = result.filter((item) => {
+        const itemTagIds = (itemTags[item.id] ?? []).map((t) => t.id);
+        return selectedTagIds.some((tagId) => itemTagIds.includes(tagId));
+      });
     }
 
     if (searchQuery.trim()) {
@@ -57,7 +68,7 @@ export default function WorkspacePage() {
     });
 
     return result;
-  }, [items, searchQuery, sortBy, sortOrder, showFavoritesOnly]);
+  }, [items, searchQuery, sortBy, sortOrder, showFavoritesOnly, selectedTagIds, itemTags]);
 
   const selectedItem = useMemo(() => {
     if (selectedItemIds.length === 1) {
@@ -114,6 +125,9 @@ export default function WorkspacePage() {
           </button>
         </div>
       </div>
+
+      {/* Tag filter bar */}
+      <TagFilterBar />
 
       {/* Content */}
       <div className="flex flex-1 overflow-hidden">

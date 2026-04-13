@@ -4,6 +4,7 @@ use crate::services::capture::CaptureService;
 use crate::services::editor::EditorService;
 use crate::services::settings::SettingsService;
 use crate::services::storage::StorageService;
+use crate::services::tag::TagService;
 use crate::services::thumbnail::ThumbnailService;
 use crate::services::workspace::WorkspaceService;
 
@@ -14,6 +15,7 @@ use crate::services::workspace::WorkspaceService;
 pub struct AppState {
     pub capture_service: Box<dyn CaptureService>,
     pub workspace_service: Box<dyn WorkspaceService>,
+    pub tag_service: Box<dyn TagService>,
     pub settings_service: Box<dyn SettingsService>,
     pub editor_service: Box<dyn EditorService>,
     pub thumbnail_service: Box<dyn ThumbnailService>,
