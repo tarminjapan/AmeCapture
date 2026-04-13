@@ -51,9 +51,9 @@ export default function WorkspacePage() {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (item) =>
-          item.title.toLowerCase().includes(q) ||
-          item.type.toLowerCase().includes(q) ||
-          getTypeLabel(item.type).includes(q),
+          (item.title ?? '').toLowerCase().includes(q) ||
+          (item.type ?? '').toLowerCase().includes(q) ||
+          getTypeLabel(item.type ?? 'image').includes(q),
       );
     }
 
