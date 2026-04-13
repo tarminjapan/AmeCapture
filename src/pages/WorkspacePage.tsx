@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useTagStore } from '@/stores/tagStore';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useCapture } from '@/hooks/useCapture';
 import { SearchBar } from '@/components/SearchBar';
 import { ThumbnailGrid } from '@/components/ThumbnailGrid';
 import { DetailPanel } from '@/components/DetailPanel';
@@ -25,6 +26,7 @@ export default function WorkspacePage() {
 
   const { loadItems, deleteItem, toggleFavorite, renameItem, showInFolder, copyImageToClipboard } =
     useWorkspace();
+  const { captureFullscreen } = useCapture();
   const [showDetail, setShowDetail] = useState(false);
 
   useEffect(() => {
@@ -82,8 +84,8 @@ export default function WorkspacePage() {
     setShowDetail(ids.length === 1);
   };
 
-  const handleCaptureFullscreen = () => {
-    // TODO: implement fullscreen capture
+  const handleCaptureFullscreen = async () => {
+    await captureFullscreen();
   };
 
   const handleCaptureRegion = (_region: {
