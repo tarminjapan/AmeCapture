@@ -99,8 +99,9 @@ export default function WorkspacePage() {
         />
         <div className="flex items-center gap-2">
           <button
-            className={`p-1.5 rounded-md hover:bg-accent ${showFavoritesOnly ? 'bg-accent text-yellow-500' : ''}`}
+            className={`p-1.5 rounded-md hover:bg-accent ${showFavoritesOnly ? 'bg-accent text-yellow-400' : ''}`}
             title={showFavoritesOnly ? 'すべて表示' : 'お気に入りのみ表示'}
+            aria-pressed={showFavoritesOnly}
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
           >
             <Star
