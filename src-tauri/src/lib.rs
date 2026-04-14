@@ -105,6 +105,7 @@ pub fn run() {
             commands::capture::prepare_region_capture,
             commands::capture::finalize_region_capture,
             commands::capture::cancel_region_capture,
+            commands::capture::prepare_window_capture,
             commands::workspace::get_workspace_items,
             commands::workspace::delete_workspace_item,
             commands::workspace::rename_workspace_item,

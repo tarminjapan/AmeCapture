@@ -9,9 +9,10 @@ import { DetailPanel } from '@/components/DetailPanel';
 import { Toolbar } from '@/components/Toolbar';
 import { TagFilterBar } from '@/components/TagFilterBar';
 import { RegionCaptureOverlay } from '@/components/RegionCaptureOverlay';
+import { WindowCaptureOverlay } from '@/components/WindowCaptureOverlay';
 import { ImageOff, Settings, Star } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
-import type { CaptureRegion, RegionCaptureInfo } from '@/types';
+import type { CaptureRegion, RegionCaptureInfo, WindowInfo } from '@/types';
 
 export default function WorkspacePage() {
   const items = useWorkspaceStore((s) => s.items);
@@ -28,10 +29,17 @@ export default function WorkspacePage() {
 
   const { loadItems, deleteItem, toggleFavorite, renameItem, showInFolder, copyImageToClipboard } =
     useWorkspace();
-  const { captureFullscreen, prepareRegionCapture, finalizeRegionCapture, cancelRegionCapture } =
-    useCapture();
+  const {
+    captureFullscreen,
+    captureWindow,
+    prepareRegionCapture,
+    finalizeRegionCapture,
+    cancelRegionCapture,
+    prepareWindowCapture,
+  } = useCapture();
   const [showDetail, setShowDetail] = useState(false);
   const [regionCaptureInfo, setRegionCaptureInfo] = useState<RegionCaptureInfo | null>(null);
+  const [windowCaptureList, setWindowCaptureList] = useState<WindowInfo[] | null>(null);
 
   useEffect(() => {
     loadItems();
@@ -109,8 +117,20 @@ export default function WorkspacePage() {
     await cancelRegionCapture(sourcePath);
   };
 
-  const handleCaptureWindow = () => {
-    // TODO: implement window capture
+  const handleCaptureWindow = async () => {
+    const result = await prepareWindowCapture();
+    if (result.success && result.data) {
+      setWindowCaptureList(result.data.windows);
+    }
+  };
+
+  const handleWindowSelect = async (hwnd: number) => {
+    setWindowCaptureList(null);
+    await captureWindow(hwnd);
+  };
+
+  const handleWindowCancel = () => {
+    setWindowCaptureList(null);
   };
 
   if (regionCaptureInfo) {
@@ -119,6 +139,16 @@ export default function WorkspacePage() {
         captureInfo={regionCaptureInfo}
         onConfirm={handleRegionConfirm}
         onCancel={handleRegionCancel}
+      />
+    );
+  }
+
+  if (windowCaptureList) {
+    return (
+      <WindowCaptureOverlay
+        windows={windowCaptureList}
+        onSelect={handleWindowSelect}
+        onCancel={handleWindowCancel}
       />
     );
   }

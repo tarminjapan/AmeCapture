@@ -34,3 +34,9 @@ pub struct RegionCaptureInfo {
     pub screen_height: u32,
     pub image_data_uri: String,
 }
+
+/// Info returned when preparing a window capture (list of available windows)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WindowCaptureInfo {
+    pub windows: Vec<WindowInfo>,
+}
