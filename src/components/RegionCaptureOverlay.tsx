@@ -33,6 +33,8 @@ export function RegionCaptureOverlay({
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [imageBounds, setImageBounds] = useState<ImageBounds | null>(null);
 
+  const { imageDataUri } = captureInfo;
+
   const computeImageBounds = useCallback(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
@@ -72,22 +74,6 @@ export function RegionCaptureOverlay({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [computeImageBounds]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onCancel(captureInfo.tempPath);
-      }
-      if (e.key === 'Enter' && selection) {
-        const region = mapSelectionToScreen(selection);
-        if (region.width > 0 && region.height > 0) {
-          onConfirm(captureInfo.tempPath, region);
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  });
 
   const mapClientToScreen = useCallback(
     (clientX: number, clientY: number): { x: number; y: number } => {
@@ -129,6 +115,22 @@ export function RegionCaptureOverlay({
   }, [startPoint, currentPoint]);
 
   const selection = getSelection();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel(captureInfo.tempPath);
+      }
+      if (e.key === 'Enter' && selection) {
+        const region = mapSelectionToScreen(selection);
+        if (region.width > 0 && region.height > 0) {
+          onConfirm(captureInfo.tempPath, region);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel, onConfirm, captureInfo.tempPath, selection, mapSelectionToScreen]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -180,7 +182,7 @@ export function RegionCaptureOverlay({
       onMouseLeave={() => setMousePos(null)}
     >
       <img
-        src={captureInfo.tempPath}
+        src={imageDataUri}
         className="absolute w-full h-full object-contain pointer-events-none"
         draggable={false}
         alt=""
@@ -202,7 +204,7 @@ export function RegionCaptureOverlay({
         >
           <div className="absolute inset-0 overflow-hidden">
             <img
-              src={captureInfo.tempPath}
+              src={imageDataUri}
               className="absolute w-full h-full object-contain pointer-events-none"
               draggable={false}
               alt=""

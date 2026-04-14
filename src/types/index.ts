@@ -38,6 +38,7 @@ export interface RegionCaptureInfo {
   tempPath: string;
   screenWidth: number;
   screenHeight: number;
+  imageDataUri: string;
 }
 
 // === Editor Types ===

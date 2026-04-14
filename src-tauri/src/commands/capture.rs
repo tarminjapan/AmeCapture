@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::time::Duration;
 
 use tauri::Manager;
@@ -7,6 +8,34 @@ use crate::app_state::AppState;
 use crate::error::CommandResult;
 use crate::models::capture::{CaptureRegion, RegionCaptureInfo};
 use crate::models::workspace_item::{WorkspaceItem, WorkspaceItemType};
+
+fn validate_temp_path(source_path: &str) -> Result<(), String> {
+    let path = Path::new(source_path);
+
+    let temp_dir = std::env::temp_dir();
+    let canonical_source = path
+        .canonicalize()
+        .map_err(|_| "Invalid source path".to_string())?;
+    let canonical_temp = temp_dir
+        .canonicalize()
+        .map_err(|_| "Cannot resolve temp directory".to_string())?;
+
+    if !canonical_source.starts_with(&canonical_temp) {
+        return Err("Source path is outside the temp directory".to_string());
+    }
+
+    let file_name = path
+        .file_name()
+        .ok_or_else(|| "Invalid file name".to_string())?
+        .to_str()
+        .ok_or_else(|| "Invalid file name encoding".to_string())?;
+
+    if !file_name.starts_with("amecapture_region_") || !file_name.ends_with(".png") {
+        return Err("Invalid temp file name pattern".to_string());
+    }
+
+    Ok(())
+}
 
 #[tauri::command]
 pub fn capture(
@@ -158,6 +187,18 @@ pub fn prepare_region_capture(
         tracing::warn!("Failed to focus window: {}", e);
     }
 
+    let image_bytes = match std::fs::read(&temp_path) {
+        Ok(b) => b,
+        Err(e) => {
+            let _ = std::fs::remove_file(&temp_path);
+            return CommandResult::err(format!("Failed to read temp image: {e}"));
+        }
+    };
+    let image_data_uri = format!(
+        "data:image/png;base64,{}",
+        base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &image_bytes)
+    );
+
     tracing::info!(
         "Region capture prepared: {} ({}x{})",
         temp_str,
@@ -169,6 +210,7 @@ pub fn prepare_region_capture(
         temp_path: temp_str,
         screen_width: capture_result.width,
         screen_height: capture_result.height,
+        image_data_uri,
     })
 }
 
@@ -186,18 +228,25 @@ pub fn finalize_region_capture(
         region.height
     );
 
+    if let Err(e) = validate_temp_path(&source_path) {
+        return CommandResult::err(e);
+    }
+
     if let Err(e) = state.storage_service.ensure_directories() {
         return CommandResult::err(format!("Failed to create storage directories: {e}"));
     }
 
-    let source = std::path::Path::new(&source_path);
+    let source = Path::new(&source_path);
     if !source.exists() {
         return CommandResult::err("Source screenshot file not found");
     }
 
     let img = match image::open(source) {
         Ok(i) => i,
-        Err(e) => return CommandResult::err(format!("Failed to open source image: {e}")),
+        Err(e) => {
+            let _ = std::fs::remove_file(&source_path);
+            return CommandResult::err(format!("Failed to open source image: {e}"));
+        }
     };
 
     let x = (region.x.max(0) as u32).min(img.width().saturating_sub(1));
@@ -222,7 +271,10 @@ pub fn finalize_region_capture(
     let original_path = state.storage_service.resolve_original_path(&filename);
     let original_str = match original_path.to_str() {
         Some(s) => s.to_string(),
-        None => return CommandResult::err("Invalid original path encoding"),
+        None => {
+            let _ = std::fs::remove_file(&source_path);
+            return CommandResult::err("Invalid original path encoding");
+        }
     };
 
     if let Err(e) = cropped.save_with_format(&original_path, image::ImageFormat::Png) {
@@ -288,6 +340,10 @@ pub fn finalize_region_capture(
 #[tauri::command]
 pub fn cancel_region_capture(source_path: String) -> CommandResult<()> {
     tracing::info!("Cancelling region capture");
+    if let Err(e) = validate_temp_path(&source_path) {
+        tracing::warn!("Invalid source path in cancel_region_capture: {}", e);
+        return CommandResult::success();
+    }
     let _ = std::fs::remove_file(&source_path);
     CommandResult::success()
 }

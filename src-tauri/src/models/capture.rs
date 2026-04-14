@@ -32,4 +32,5 @@ pub struct RegionCaptureInfo {
     pub temp_path: String,
     pub screen_width: u32,
     pub screen_height: u32,
+    pub image_data_uri: String,
 }
