@@ -34,6 +34,12 @@ export interface CaptureRegion {
 
 export type CaptureType = 'fullscreen' | 'region' | 'window';
 
+export interface RegionCaptureInfo {
+  tempPath: string;
+  screenWidth: number;
+  screenHeight: number;
+}
+
 // === Editor Types ===
 
 export type EditorTool = 'select' | 'arrow' | 'text' | 'rectangle' | 'mosaic' | 'crop';

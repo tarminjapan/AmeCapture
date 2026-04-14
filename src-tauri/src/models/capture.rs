@@ -25,3 +25,11 @@ pub struct CaptureResult {
     pub width: u32,
     pub height: u32,
 }
+
+/// Info returned after preparing a region capture
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegionCaptureInfo {
+    pub temp_path: String,
+    pub screen_width: u32,
+    pub screen_height: u32,
+}
