@@ -41,6 +41,17 @@ export interface RegionCaptureInfo {
   imageDataUri: string;
 }
 
+export interface WindowInfo {
+  hwnd: number;
+  title: string;
+  className: string;
+  bounds: [number, number, number, number];
+}
+
+export interface WindowCaptureInfo {
+  windows: WindowInfo[];
+}
+
 // === Editor Types ===
 
 export type EditorTool = 'select' | 'arrow' | 'text' | 'rectangle' | 'mosaic' | 'crop';

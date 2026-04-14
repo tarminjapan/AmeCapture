@@ -34,11 +34,9 @@ impl CaptureService for DefaultCaptureService {
         ))
     }
 
-    fn capture_window(&self, hwnd: isize, _save_path: &str) -> AppResult<CaptureResult> {
+    fn capture_window(&self, hwnd: isize, save_path: &str) -> AppResult<CaptureResult> {
         tracing::info!("Window capture requested for hwnd={}", hwnd);
-        Err(AppError::Capture(
-            "Window capture not yet implemented".into(),
-        ))
+        capture_window_by_hwnd(hwnd, save_path)
     }
 }
 
@@ -69,6 +67,7 @@ impl CaptureService for DefaultCaptureService {
 
 #[cfg(target_os = "windows")]
 mod gdi_guard {
+    use windows::Win32::Foundation::HWND;
     use windows::Win32::Graphics::Gdi::{
         DeleteDC, DeleteObject, ReleaseDC, SelectObject, HBITMAP, HDC, HGDIOBJ,
     };
@@ -104,6 +103,37 @@ mod gdi_guard {
                 unsafe {
                     let _ = ReleaseDC(None, self.dc);
                 }
+            }
+        }
+    }
+
+    pub struct WindowDcGuard {
+        hwnd: HWND,
+        dc: HDC,
+        released: bool,
+    }
+
+    impl WindowDcGuard {
+        pub fn new(hwnd: HWND, dc: HDC) -> Self {
+            Self {
+                hwnd,
+                dc,
+                released: false,
+            }
+        }
+
+        pub fn get(&self) -> HDC {
+            self.dc
+        }
+    }
+
+    impl Drop for WindowDcGuard {
+        fn drop(&mut self) {
+            if !self.released {
+                unsafe {
+                    let _ = ReleaseDC(Some(self.hwnd), self.dc);
+                }
+                self.released = true;
             }
         }
     }
@@ -217,6 +247,113 @@ fn capture_screen(save_path: &str) -> AppResult<CaptureResult> {
             .map_err(|e| AppError::Capture(format!("Failed to save captured image: {e}")))?;
 
         screen_dc.release();
+
+        Ok(CaptureResult {
+            file_path: save_path.to_string(),
+            width: width as u32,
+            height: height as u32,
+        })
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn capture_window_by_hwnd(hwnd: isize, save_path: &str) -> AppResult<CaptureResult> {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS};
+    use windows::Win32::Graphics::Gdi::*;
+    use windows::Win32::UI::WindowsAndMessaging::GetWindowRect;
+
+    let save = std::path::Path::new(save_path);
+    if let Some(parent) = save.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let hwnd = HWND(hwnd as *mut _);
+
+    let (width, height) = unsafe {
+        let mut rect: windows::Win32::Foundation::RECT = std::mem::zeroed();
+        let hr = DwmGetWindowAttribute(
+            hwnd,
+            DWMWA_EXTENDED_FRAME_BOUNDS,
+            &mut rect as *mut _ as *mut _,
+            std::mem::size_of::<windows::Win32::Foundation::RECT>() as u32,
+        );
+        if hr.is_ok() && rect.right > rect.left && rect.bottom > rect.top {
+            (rect.right - rect.left, rect.bottom - rect.top)
+        } else {
+            let mut fallback: windows::Win32::Foundation::RECT = std::mem::zeroed();
+            let _ = GetWindowRect(hwnd, &mut fallback);
+            (
+                fallback.right - fallback.left,
+                fallback.bottom - fallback.top,
+            )
+        }
+    };
+
+    if width <= 0 || height <= 0 {
+        return Err(AppError::Capture("Invalid window dimensions".into()));
+    }
+
+    unsafe {
+        let window_dc_guard = gdi_guard::WindowDcGuard::new(hwnd, GetWindowDC(Some(hwnd)));
+        let window_dc = window_dc_guard.get();
+        let mem_dc = CreateCompatibleDC(Some(window_dc));
+        let bitmap = CreateCompatibleBitmap(window_dc, width, height);
+        let old = SelectObject(mem_dc, bitmap.into());
+
+        let _gdi = gdi_guard::GdiCleanup::new(mem_dc, bitmap, old);
+
+        if let Err(e) = BitBlt(
+            mem_dc,
+            0,
+            0,
+            width,
+            height,
+            Some(window_dc),
+            0,
+            0,
+            SRCCOPY | CAPTUREBLT,
+        ) {
+            return Err(AppError::Capture(format!("BitBlt failed: {e}")));
+        }
+
+        let mut bmi: BITMAPINFO = std::mem::zeroed();
+        bmi.bmiHeader.biSize = std::mem::size_of::<BITMAPINFOHEADER>() as u32;
+        bmi.bmiHeader.biWidth = width;
+        bmi.bmiHeader.biHeight = -height;
+        bmi.bmiHeader.biPlanes = 1;
+        bmi.bmiHeader.biBitCount = 32;
+
+        let buf_size = (width as usize) * (height as usize) * 4;
+        let mut pixels = vec![0u8; buf_size];
+
+        let scan_lines = GetDIBits(
+            mem_dc,
+            bitmap,
+            0,
+            height as u32,
+            Some(pixels.as_mut_ptr() as *mut _),
+            &mut bmi,
+            DIB_RGB_COLORS,
+        );
+
+        drop(window_dc_guard);
+
+        if scan_lines == 0 {
+            return Err(AppError::Capture("GetDIBits returned 0 scan lines".into()));
+        }
+
+        for chunk in pixels.chunks_exact_mut(4) {
+            chunk.swap(0, 2);
+        }
+
+        let img =
+            image::RgbaImage::from_raw(width as u32, height as u32, pixels).ok_or_else(|| {
+                AppError::Capture("Failed to create image from captured pixels".into())
+            })?;
+
+        img.save_with_format(save, image::ImageFormat::Png)
+            .map_err(|e| AppError::Capture(format!("Failed to save captured image: {e}")))?;
 
         Ok(CaptureResult {
             file_path: save_path.to_string(),

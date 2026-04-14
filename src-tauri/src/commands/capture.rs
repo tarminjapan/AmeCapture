@@ -6,7 +6,7 @@ use tauri::State;
 
 use crate::app_state::AppState;
 use crate::error::CommandResult;
-use crate::models::capture::{CaptureRegion, RegionCaptureInfo};
+use crate::models::capture::{CaptureRegion, RegionCaptureInfo, WindowCaptureInfo};
 use crate::models::workspace_item::{WorkspaceItem, WorkspaceItemType};
 
 fn validate_temp_path(source_path: &str) -> Result<(), String> {
@@ -41,6 +41,7 @@ fn validate_temp_path(source_path: &str) -> Result<(), String> {
 pub fn capture(
     r#type: String,
     region: Option<CaptureRegion>,
+    hwnd: Option<isize>,
     state: State<'_, AppState>,
 ) -> CommandResult<WorkspaceItem> {
     match r#type.as_str() {
@@ -139,8 +140,91 @@ pub fn capture(
             }
         }
         "window" => {
-            tracing::info!("Window capture requested");
-            CommandResult::err("Window capture not yet implemented")
+            let hwnd_val = match hwnd {
+                Some(h) => h,
+                None => return CommandResult::err("Window handle (hwnd) not specified"),
+            };
+            tracing::info!("Window capture requested for hwnd={}", hwnd_val);
+
+            if let Err(e) = state.storage_service.ensure_directories() {
+                return CommandResult::err(format!("Failed to create storage directories: {e}"));
+            }
+
+            let filename = format!(
+                "capture_{}.png",
+                chrono::Local::now().format("%Y%m%d_%H%M%S")
+            );
+
+            let original_path = state.storage_service.resolve_original_path(&filename);
+            let original_str = match original_path.to_str() {
+                Some(s) => s.to_string(),
+                None => return CommandResult::err("Invalid original path encoding"),
+            };
+
+            let capture_result = match state
+                .capture_service
+                .capture_window(hwnd_val, &original_str)
+            {
+                Ok(r) => r,
+                Err(e) => return CommandResult::err(e.to_string()),
+            };
+
+            let edited_path = state.storage_service.resolve_edited_path(&filename);
+            let edited_str = match edited_path.to_str() {
+                Some(s) => s.to_string(),
+                None => return CommandResult::err("Invalid edited path encoding"),
+            };
+
+            if let Err(e) = std::fs::copy(&original_path, &edited_path) {
+                return CommandResult::err(format!(
+                    "Failed to copy original to edited directory: {e}"
+                ));
+            }
+
+            let thumb_path = state.storage_service.resolve_thumbnail_path(&filename);
+            let thumb_str = match thumb_path.to_str() {
+                Some(s) => s.to_string(),
+                None => return CommandResult::err("Invalid thumbnail path encoding"),
+            };
+
+            if let Err(e) = state
+                .thumbnail_service
+                .generate_thumbnail(&original_str, &thumb_str)
+            {
+                return CommandResult::err(format!("Failed to generate thumbnail: {e}"));
+            }
+
+            let now = chrono::Utc::now().to_rfc3339();
+            let title = format!(
+                "Window Capture {}",
+                chrono::Local::now().format("%Y/%m/%d %H:%M:%S")
+            );
+
+            let item = WorkspaceItem {
+                id: uuid::Uuid::new_v4().to_string(),
+                item_type: WorkspaceItemType::Image,
+                original_path: original_str,
+                current_path: edited_str,
+                thumbnail_path: Some(thumb_str),
+                title,
+                created_at: now.clone(),
+                updated_at: now,
+                is_favorite: false,
+                metadata_json: None,
+            };
+
+            match state.workspace_service.add_item(&item) {
+                Ok(()) => {
+                    tracing::info!(
+                        "Window capture saved: {} ({}x{})",
+                        item.id,
+                        capture_result.width,
+                        capture_result.height
+                    );
+                    CommandResult::ok(item)
+                }
+                Err(e) => CommandResult::err(e.to_string()),
+            }
         }
         _ => CommandResult::err(format!("Unknown capture type: {}", r#type)),
     }
@@ -356,4 +440,42 @@ pub fn cancel_region_capture(source_path: String) -> CommandResult<()> {
     }
     let _ = std::fs::remove_file(&source_path);
     CommandResult::success()
+}
+
+#[tauri::command]
+pub fn prepare_window_capture(app: tauri::AppHandle) -> CommandResult<WindowCaptureInfo> {
+    use crate::platform;
+
+    tracing::info!("Preparing window capture");
+
+    let window = match app.get_webview_window("main") {
+        Some(w) => w,
+        None => return CommandResult::err("Main window not found"),
+    };
+
+    if let Err(e) = window.minimize() {
+        tracing::warn!("Failed to minimize window: {}", e);
+    }
+
+    std::thread::sleep(Duration::from_millis(200));
+
+    let windows = match platform::enumerate_windows() {
+        Ok(w) => w,
+        Err(e) => {
+            let _ = window.unminimize();
+            let _ = window.set_focus();
+            return CommandResult::err(format!("Failed to enumerate windows: {e}"));
+        }
+    };
+
+    if let Err(e) = window.unminimize() {
+        tracing::warn!("Failed to unminimize window: {}", e);
+    }
+    if let Err(e) = window.set_focus() {
+        tracing::warn!("Failed to focus window: {}", e);
+    }
+
+    tracing::info!("Found {} windows for capture", windows.len());
+
+    CommandResult::ok(WindowCaptureInfo { windows })
 }
