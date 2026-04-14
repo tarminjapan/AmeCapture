@@ -102,6 +102,9 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::capture::capture,
+            commands::capture::prepare_region_capture,
+            commands::capture::finalize_region_capture,
+            commands::capture::cancel_region_capture,
             commands::workspace::get_workspace_items,
             commands::workspace::delete_workspace_item,
             commands::workspace::rename_workspace_item,

@@ -8,8 +8,10 @@ import { ThumbnailGrid } from '@/components/ThumbnailGrid';
 import { DetailPanel } from '@/components/DetailPanel';
 import { Toolbar } from '@/components/Toolbar';
 import { TagFilterBar } from '@/components/TagFilterBar';
+import { RegionCaptureOverlay } from '@/components/RegionCaptureOverlay';
 import { ImageOff, Settings, Star } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
+import type { CaptureRegion, RegionCaptureInfo } from '@/types';
 
 export default function WorkspacePage() {
   const items = useWorkspaceStore((s) => s.items);
@@ -26,8 +28,10 @@ export default function WorkspacePage() {
 
   const { loadItems, deleteItem, toggleFavorite, renameItem, showInFolder, copyImageToClipboard } =
     useWorkspace();
-  const { captureFullscreen } = useCapture();
+  const { captureFullscreen, prepareRegionCapture, finalizeRegionCapture, cancelRegionCapture } =
+    useCapture();
   const [showDetail, setShowDetail] = useState(false);
+  const [regionCaptureInfo, setRegionCaptureInfo] = useState<RegionCaptureInfo | null>(null);
 
   useEffect(() => {
     loadItems();
@@ -88,18 +92,36 @@ export default function WorkspacePage() {
     await captureFullscreen();
   };
 
-  const handleCaptureRegion = (_region: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }) => {
-    // TODO: implement region capture
+  const handleCaptureRegion = async () => {
+    const result = await prepareRegionCapture();
+    if (result.success && result.data) {
+      setRegionCaptureInfo(result.data);
+    }
+  };
+
+  const handleRegionConfirm = async (sourcePath: string, region: CaptureRegion) => {
+    setRegionCaptureInfo(null);
+    await finalizeRegionCapture(sourcePath, region);
+  };
+
+  const handleRegionCancel = async (sourcePath: string) => {
+    setRegionCaptureInfo(null);
+    await cancelRegionCapture(sourcePath);
   };
 
   const handleCaptureWindow = () => {
     // TODO: implement window capture
   };
+
+  if (regionCaptureInfo) {
+    return (
+      <RegionCaptureOverlay
+        captureInfo={regionCaptureInfo}
+        onConfirm={handleRegionConfirm}
+        onCancel={handleRegionCancel}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full w-full flex-col">

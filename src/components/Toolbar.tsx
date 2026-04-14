@@ -2,7 +2,7 @@ import { Camera, Monitor, AppWindow } from 'lucide-react';
 
 interface ToolbarProps {
   onCaptureFullscreen: () => void;
-  onCaptureRegion: (region: { x: number; y: number; width: number; height: number }) => void;
+  onCaptureRegion: () => void;
   onCaptureWindow: () => void;
 }
 
@@ -11,7 +11,7 @@ export function Toolbar({ onCaptureFullscreen, onCaptureRegion, onCaptureWindow 
     <div className="flex items-center gap-1">
       <button
         className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-        onClick={() => onCaptureRegion({ x: 0, y: 0, width: 0, height: 0 })}
+        onClick={onCaptureRegion}
         title="領域キャプチャ"
       >
         <Camera className="w-4 h-4" />
