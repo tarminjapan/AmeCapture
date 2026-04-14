@@ -67,6 +67,7 @@ impl CaptureService for DefaultCaptureService {
 
 #[cfg(target_os = "windows")]
 mod gdi_guard {
+    use windows::Win32::Foundation::HWND;
     use windows::Win32::Graphics::Gdi::{
         DeleteDC, DeleteObject, ReleaseDC, SelectObject, HBITMAP, HDC, HGDIOBJ,
     };
@@ -102,6 +103,37 @@ mod gdi_guard {
                 unsafe {
                     let _ = ReleaseDC(None, self.dc);
                 }
+            }
+        }
+    }
+
+    pub struct WindowDcGuard {
+        hwnd: HWND,
+        dc: HDC,
+        released: bool,
+    }
+
+    impl WindowDcGuard {
+        pub fn new(hwnd: HWND, dc: HDC) -> Self {
+            Self {
+                hwnd,
+                dc,
+                released: false,
+            }
+        }
+
+        pub fn get(&self) -> HDC {
+            self.dc
+        }
+    }
+
+    impl Drop for WindowDcGuard {
+        fn drop(&mut self) {
+            if !self.released {
+                unsafe {
+                    let _ = ReleaseDC(Some(self.hwnd), self.dc);
+                }
+                self.released = true;
             }
         }
     }
@@ -263,7 +295,8 @@ fn capture_window_by_hwnd(hwnd: isize, save_path: &str) -> AppResult<CaptureResu
     }
 
     unsafe {
-        let window_dc = GetWindowDC(Some(hwnd));
+        let window_dc_guard = gdi_guard::WindowDcGuard::new(hwnd, GetWindowDC(Some(hwnd)));
+        let window_dc = window_dc_guard.get();
         let mem_dc = CreateCompatibleDC(Some(window_dc));
         let bitmap = CreateCompatibleBitmap(window_dc, width, height);
         let old = SelectObject(mem_dc, bitmap.into());
@@ -281,7 +314,6 @@ fn capture_window_by_hwnd(hwnd: isize, save_path: &str) -> AppResult<CaptureResu
             0,
             SRCCOPY | CAPTUREBLT,
         ) {
-            let _ = ReleaseDC(Some(hwnd), window_dc);
             return Err(AppError::Capture(format!("BitBlt failed: {e}")));
         }
 
@@ -305,7 +337,7 @@ fn capture_window_by_hwnd(hwnd: isize, save_path: &str) -> AppResult<CaptureResu
             DIB_RGB_COLORS,
         );
 
-        let _ = ReleaseDC(Some(hwnd), window_dc);
+        drop(window_dc_guard);
 
         if scan_lines == 0 {
             return Err(AppError::Capture("GetDIBits returned 0 scan lines".into()));
