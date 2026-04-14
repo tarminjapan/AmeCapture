@@ -287,17 +287,24 @@ pub fn finalize_region_capture(
     let edited_path = state.storage_service.resolve_edited_path(&filename);
     let edited_str = match edited_path.to_str() {
         Some(s) => s.to_string(),
-        None => return CommandResult::err("Invalid edited path encoding"),
+        None => {
+            let _ = std::fs::remove_file(&source_path);
+            return CommandResult::err("Invalid edited path encoding");
+        }
     };
 
     if let Err(e) = std::fs::copy(&original_path, &edited_path) {
+        let _ = std::fs::remove_file(&source_path);
         return CommandResult::err(format!("Failed to copy original to edited directory: {e}"));
     }
 
     let thumb_path = state.storage_service.resolve_thumbnail_path(&filename);
     let thumb_str = match thumb_path.to_str() {
         Some(s) => s.to_string(),
-        None => return CommandResult::err("Invalid thumbnail path encoding"),
+        None => {
+            let _ = std::fs::remove_file(&source_path);
+            return CommandResult::err("Invalid thumbnail path encoding");
+        }
     };
 
     if let Err(e) = state
