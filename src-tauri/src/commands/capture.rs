@@ -162,6 +162,8 @@ pub fn prepare_region_capture(
         tracing::warn!("Failed to minimize window: {}", e);
     }
 
+    // TODO: ウィンドウの最小化完了イベントを待機する実装を検討する。
+    // 現状は、OSやマシンスペックによるアニメーション等の完了ラグを吸収するため、200ms待機している。
     std::thread::sleep(Duration::from_millis(200));
 
     let temp_dir = std::env::temp_dir();
@@ -302,6 +304,7 @@ pub fn finalize_region_capture(
         .thumbnail_service
         .generate_thumbnail(&original_str, &thumb_str)
     {
+        let _ = std::fs::remove_file(&source_path);
         return CommandResult::err(format!("Failed to generate thumbnail: {e}"));
     }
 
