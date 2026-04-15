@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { register, unregisterAll } from '@tauri-apps/plugin-global-shortcut';
+import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { invoke } from '@tauri-apps/api/core';
 import type { AppSettings, CommandResult } from '@/types';
 
@@ -11,11 +11,12 @@ export function useGlobalShortcut(onAction: (action: CaptureAction) => void) {
 
   useEffect(() => {
     let cancelled = false;
+    const registeredShortcuts: string[] = [];
 
     const setup = async () => {
       try {
         const result = await invoke<CommandResult<AppSettings>>('get_settings');
-        if (!result.success || !result.data) return;
+        if (cancelled || !result.success || !result.data) return;
 
         const { hotkeyCaptureRegion, hotkeyCaptureFullscreen, hotkeyCaptureWindow } = result.data;
 
@@ -24,7 +25,7 @@ export function useGlobalShortcut(onAction: (action: CaptureAction) => void) {
         if (hotkeyCaptureFullscreen) entries.push([hotkeyCaptureFullscreen, 'fullscreen']);
         if (hotkeyCaptureWindow) entries.push([hotkeyCaptureWindow, 'window']);
 
-        if (entries.length === 0) return;
+        if (entries.length === 0 || cancelled) return;
 
         const shortcuts = entries.map(([s]) => s);
         const shortcutMap = Object.fromEntries(entries);
@@ -37,20 +38,30 @@ export function useGlobalShortcut(onAction: (action: CaptureAction) => void) {
               onActionRef.current(action);
             }
           });
+          registeredShortcuts.push(...shortcuts);
         } catch {
+          if (cancelled) return;
           for (const [shortcut, action] of entries) {
+            if (cancelled) break;
             try {
               await register(shortcut, (event) => {
                 if (event.state !== 'Pressed' || cancelled) return;
                 onActionRef.current(action);
               });
+              registeredShortcuts.push(shortcut);
             } catch (e) {
               console.warn(`Failed to register hotkey "${shortcut}" for ${action}:`, e);
             }
           }
         }
+
+        if (cancelled && registeredShortcuts.length > 0) {
+          unregister(registeredShortcuts).catch(() => {});
+        }
       } catch (error) {
-        console.error('Failed to setup global shortcuts:', error);
+        if (!cancelled) {
+          console.error('Failed to setup global shortcuts:', error);
+        }
       }
     };
 
@@ -58,7 +69,9 @@ export function useGlobalShortcut(onAction: (action: CaptureAction) => void) {
 
     return () => {
       cancelled = true;
-      unregisterAll().catch(() => {});
+      if (registeredShortcuts.length > 0) {
+        unregister(registeredShortcuts).catch(() => {});
+      }
     };
   }, []);
 }
