@@ -8,8 +8,6 @@ pub trait WorkspaceService: Send + Sync {
     fn get_all_items(&self) -> AppResult<Vec<WorkspaceItem>>;
     fn get_item(&self, id: &str) -> AppResult<Option<WorkspaceItem>>;
     fn add_item(&self, item: &WorkspaceItem) -> AppResult<()>;
-    #[allow(dead_code)]
-    fn update_item(&self, item: &WorkspaceItem) -> AppResult<()>;
     fn delete_item(&self, id: &str) -> AppResult<()>;
     fn rename_item(&self, id: &str, title: &str) -> AppResult<WorkspaceItem>;
     fn toggle_favorite(&self, id: &str, is_favorite: bool) -> AppResult<()>;
@@ -120,11 +118,6 @@ impl<R: WorkspaceRepository> WorkspaceService for DefaultWorkspaceService<R> {
     fn add_item(&self, item: &WorkspaceItem) -> AppResult<()> {
         tracing::info!("Adding workspace item: {} ({})", item.id, item.title);
         self.repo.add(item)
-    }
-
-    fn update_item(&self, item: &WorkspaceItem) -> AppResult<()> {
-        tracing::info!("Updating workspace item: {}", item.id);
-        self.repo.update(item)
     }
 
     fn delete_item(&self, id: &str) -> AppResult<()> {

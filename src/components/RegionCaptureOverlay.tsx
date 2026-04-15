@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { convertFileSrc } from '@tauri-apps/api/core';
 import type { CaptureRegion, RegionCaptureInfo } from '@/types';
 
 interface RegionCaptureOverlayProps {

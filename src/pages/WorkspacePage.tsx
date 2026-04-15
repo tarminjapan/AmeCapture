@@ -46,7 +46,44 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [loadItems]);
+
+  const handleCaptureFullscreen = async () => {
+    await captureFullscreen();
+  };
+
+  const handleCaptureRegion = async () => {
+    const result = await prepareRegionCapture();
+    if (result.success && result.data) {
+      setRegionCaptureInfo(result.data);
+    }
+  };
+
+  const handleRegionConfirm = async (sourcePath: string, region: CaptureRegion) => {
+    setRegionCaptureInfo(null);
+    await finalizeRegionCapture(sourcePath, region);
+  };
+
+  const handleRegionCancel = async (sourcePath: string) => {
+    setRegionCaptureInfo(null);
+    await cancelRegionCapture(sourcePath);
+  };
+
+  const handleCaptureWindow = async () => {
+    const result = await prepareWindowCapture();
+    if (result.success && result.data) {
+      setWindowCaptureList(result.data.windows);
+    }
+  };
+
+  const handleWindowSelect = async (hwnd: number) => {
+    setWindowCaptureList(null);
+    await captureWindow(hwnd);
+  };
+
+  const handleWindowCancel = () => {
+    setWindowCaptureList(null);
+  };
 
   useGlobalShortcut((action: CaptureAction) => {
     if (regionCaptureInfo || windowCaptureList) return;
@@ -103,7 +140,7 @@ export default function WorkspacePage() {
     }
 
     result.sort((a, b) => {
-      let cmp = 0;
+      let cmp: number;
       if (sortBy === 'title') {
         cmp = (a.title ?? '').localeCompare(b.title ?? '');
       } else if (sortBy === 'updatedAt') {
@@ -127,43 +164,6 @@ export default function WorkspacePage() {
   const handleSelect = (ids: string[]) => {
     setSelectedItemIds(ids);
     setShowDetail(ids.length === 1);
-  };
-
-  const handleCaptureFullscreen = async () => {
-    await captureFullscreen();
-  };
-
-  const handleCaptureRegion = async () => {
-    const result = await prepareRegionCapture();
-    if (result.success && result.data) {
-      setRegionCaptureInfo(result.data);
-    }
-  };
-
-  const handleRegionConfirm = async (sourcePath: string, region: CaptureRegion) => {
-    setRegionCaptureInfo(null);
-    await finalizeRegionCapture(sourcePath, region);
-  };
-
-  const handleRegionCancel = async (sourcePath: string) => {
-    setRegionCaptureInfo(null);
-    await cancelRegionCapture(sourcePath);
-  };
-
-  const handleCaptureWindow = async () => {
-    const result = await prepareWindowCapture();
-    if (result.success && result.data) {
-      setWindowCaptureList(result.data.windows);
-    }
-  };
-
-  const handleWindowSelect = async (hwnd: number) => {
-    setWindowCaptureList(null);
-    await captureWindow(hwnd);
-  };
-
-  const handleWindowCancel = () => {
-    setWindowCaptureList(null);
   };
 
   if (regionCaptureInfo) {

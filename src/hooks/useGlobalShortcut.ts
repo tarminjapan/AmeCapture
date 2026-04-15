@@ -7,7 +7,9 @@ export type CaptureAction = 'region' | 'fullscreen' | 'window';
 
 export function useGlobalShortcut(onAction: (action: CaptureAction) => void) {
   const onActionRef = useRef(onAction);
-  onActionRef.current = onAction;
+  useEffect(() => {
+    onActionRef.current = onAction;
+  }, [onAction]);
 
   useEffect(() => {
     let cancelled = false;

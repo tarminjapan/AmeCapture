@@ -19,7 +19,7 @@ export function TagInput({ itemId }: TagInputProps) {
 
   useEffect(() => {
     loadTagsForItem(itemId);
-  }, [itemId]);
+  }, [itemId, loadTagsForItem]);
 
   const currentTags = itemTags;
   const assignedTagIds = new Set(currentTags.map((t) => t.id));
@@ -58,7 +58,7 @@ export function TagInput({ itemId }: TagInputProps) {
       e.preventDefault();
       if (inputValue.trim()) {
         if (suggestions.length === 1) {
-          handleAddTag(suggestions[0]);
+          handleAddTag(suggestions[0]!);
         } else {
           handleCreateAndAdd();
         }
