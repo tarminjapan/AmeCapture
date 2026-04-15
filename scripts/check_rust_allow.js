@@ -20,7 +20,7 @@ let failed = false;
 
 walkDir(targetDir, (filePath) => {
   const content = fs.readFileSync(filePath, 'utf-8');
-  if (content.includes('allow(')) {
+  if (/(?:#|#!)\s*\[\s*allow\s*\(/.test(content)) {
     console.error(
       `\x1b[31m[ERROR]\x1b[0m Found 'allow(' in ${filePath}. Using #[allow(...)] or #![allow(...)] is strictly forbidden.`,
     );
