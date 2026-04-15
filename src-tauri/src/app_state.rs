@@ -12,6 +12,7 @@ use crate::services::workspace::WorkspaceService;
 ///
 /// This serves as the DI container, holding trait-object references
 /// to all services. Services are resolved through this state in commands.
+#[allow(dead_code)]
 pub struct AppState {
     pub capture_service: Box<dyn CaptureService>,
     pub workspace_service: Box<dyn WorkspaceService>,

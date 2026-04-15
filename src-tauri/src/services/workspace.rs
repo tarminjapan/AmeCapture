@@ -4,6 +4,7 @@ use crate::error::{AppError, AppResult};
 use crate::models::workspace_item::WorkspaceItem;
 use crate::repositories::workspace::WorkspaceRepository;
 
+#[allow(dead_code)]
 pub trait WorkspaceService: Send + Sync {
     fn get_all_items(&self) -> AppResult<Vec<WorkspaceItem>>;
     fn get_item(&self, id: &str) -> AppResult<Option<WorkspaceItem>>;

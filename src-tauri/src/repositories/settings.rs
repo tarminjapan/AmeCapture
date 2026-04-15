@@ -5,6 +5,7 @@ use rusqlite::params;
 use crate::error::{AppError, AppResult};
 
 /// Repository trait for settings data access
+#[allow(dead_code)]
 pub trait SettingsRepository: Send + Sync {
     fn get(&self, key: &str) -> AppResult<Option<String>>;
     fn set(&self, key: &str, value: &str) -> AppResult<()>;

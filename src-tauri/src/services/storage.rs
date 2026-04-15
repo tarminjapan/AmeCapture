@@ -4,6 +4,7 @@ use crate::error::AppResult;
 use crate::storage::StoragePathResolver;
 
 /// Service trait for storage path resolution and directory management.
+#[allow(dead_code)]
 pub trait StorageService: Send + Sync {
     /// Get the base save path.
     fn get_base_path(&self) -> PathBuf;
