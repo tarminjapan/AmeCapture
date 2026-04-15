@@ -10,18 +10,20 @@ use crate::error::CommandResult;
 use crate::models::capture::{CaptureRegion, RegionCaptureInfo, WindowCaptureInfo};
 use crate::models::workspace_item::{WorkspaceItem, WorkspaceItemType};
 
-fn copy_image_to_clipboard(app: &tauri::AppHandle, image_path: &Path) {
+fn copy_image_to_clipboard(app: &tauri::AppHandle, img: image::DynamicImage) {
+    let rgba = img.into_rgba8();
+    let (w, h) = rgba.dimensions();
+    let tauri_img = tauri::image::Image::new_owned(rgba.into_raw(), w, h);
+    if let Err(e) = app.clipboard().write_image(&tauri_img) {
+        tracing::warn!("Failed to copy image to clipboard: {e}");
+    } else {
+        tracing::info!("Image copied to clipboard after capture");
+    }
+}
+
+fn copy_path_to_clipboard(app: &tauri::AppHandle, image_path: &Path) {
     match image::open(image_path) {
-        Ok(img) => {
-            let rgba = img.to_rgba8();
-            let (w, h) = rgba.dimensions();
-            let tauri_img = tauri::image::Image::new_owned(rgba.into_raw(), w, h);
-            if let Err(e) = app.clipboard().write_image(&tauri_img) {
-                tracing::warn!("Failed to copy image to clipboard: {e}");
-            } else {
-                tracing::info!("Image copied to clipboard after capture");
-            }
-        }
+        Ok(img) => copy_image_to_clipboard(app, img),
         Err(e) => {
             tracing::warn!("Failed to load image for clipboard copy: {e}");
         }
@@ -140,7 +142,7 @@ pub fn capture(
                         capture_result.width,
                         capture_result.height
                     );
-                    copy_image_to_clipboard(&app, &original_path);
+                    copy_path_to_clipboard(&app, &original_path);
                     CommandResult::ok(item)
                 }
                 Err(e) => CommandResult::err(e.to_string()),
@@ -242,7 +244,7 @@ pub fn capture(
                         capture_result.width,
                         capture_result.height
                     );
-                    copy_image_to_clipboard(&app, &original_path);
+                    copy_path_to_clipboard(&app, &original_path);
                     CommandResult::ok(item)
                 }
                 Err(e) => CommandResult::err(e.to_string()),
@@ -444,7 +446,7 @@ pub fn finalize_region_capture(
     match state.workspace_service.add_item(&item) {
         Ok(()) => {
             tracing::info!("Region capture saved: {} ({}x{})", item.id, w, h);
-            copy_image_to_clipboard(&app, &original_path);
+            copy_image_to_clipboard(&app, cropped);
             let _ = std::fs::remove_file(&source_path);
             CommandResult::ok(item)
         }

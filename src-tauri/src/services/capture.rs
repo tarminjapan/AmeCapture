@@ -1,9 +1,9 @@
 use crate::error::{AppError, AppResult};
 use crate::models::capture::{CaptureRegion, CaptureResult};
 
-#[allow(dead_code)]
 pub trait CaptureService: Send + Sync {
     fn capture_full_screen(&self, save_path: &str) -> AppResult<CaptureResult>;
+    #[allow(dead_code)]
     fn capture_region(&self, region: &CaptureRegion, save_path: &str) -> AppResult<CaptureResult>;
     fn capture_window(&self, hwnd: isize, save_path: &str) -> AppResult<CaptureResult>;
 }
