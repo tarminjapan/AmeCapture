@@ -12,6 +12,7 @@ import { RegionCaptureOverlay } from '@/components/RegionCaptureOverlay';
 import { WindowCaptureOverlay } from '@/components/WindowCaptureOverlay';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import type { CaptureAction } from '@/hooks/useGlobalShortcut';
+import { useTrayCapture } from '@/hooks/useTrayCapture';
 import { ImageOff, Settings, Star } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
 import type { CaptureRegion, RegionCaptureInfo, WindowInfo } from '@/types';
@@ -48,6 +49,21 @@ export default function WorkspacePage() {
   }, []);
 
   useGlobalShortcut((action: CaptureAction) => {
+    if (regionCaptureInfo || windowCaptureList) return;
+    switch (action) {
+      case 'fullscreen':
+        handleCaptureFullscreen();
+        break;
+      case 'region':
+        handleCaptureRegion();
+        break;
+      case 'window':
+        handleCaptureWindow();
+        break;
+    }
+  });
+
+  useTrayCapture((action: CaptureAction) => {
     if (regionCaptureInfo || windowCaptureList) return;
     switch (action) {
       case 'fullscreen':
