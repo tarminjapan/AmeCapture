@@ -12,7 +12,7 @@
     "format:check": "prettier --check . && cd src-tauri && cargo fmt --check",
     "check:ts": "tsc --noEmit",
     "check:lint": "eslint . --max-warnings 0",
-    "check:rust": "cd src-tauri && cargo clippy -- -D warnings && cd .. && node scripts/check_rust_allow.js",
+    "check:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings && node scripts/check_rust_allow.js",
     "check:all": "npm run check:ts && npm run check:lint && npm run check:rust && npm run format:check",
     "prepare": "husky"
   },
