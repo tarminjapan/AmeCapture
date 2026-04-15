@@ -12,7 +12,11 @@ mod storage;
 
 use std::sync::{Arc, Mutex};
 
-use tauri::Manager;
+use tauri::{
+    menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
+    tray::TrayIconBuilder,
+    Emitter, Manager,
+};
 
 use crate::app_state::AppState;
 use crate::db::connection::create_connection;
@@ -43,8 +47,6 @@ pub fn run() {
                 .expect("Failed to get app data dir")
                 .join("logs");
 
-            // The WorkerGuard must be kept alive for the lifetime of the app.
-            // We leak it intentionally so it's never dropped and logs are flushed.
             let guard = logging::init_logging(log_dir);
             if let Some(guard) = guard {
                 Box::leak(Box::new(guard));
@@ -97,8 +99,83 @@ pub fn run() {
 
             app.manage(app_state);
 
+            // === System Tray ===
+            let show = MenuItem::with_id(app, "show", "ウィンドウを表示", true, None::<&str>)?;
+            let capture_submenu = Submenu::with_items(
+                app,
+                "キャプチャ",
+                true,
+                &[
+                    &MenuItem::with_id(
+                        app,
+                        "capture_region",
+                        "範囲キャプチャ",
+                        true,
+                        None::<&str>,
+                    )?,
+                    &MenuItem::with_id(
+                        app,
+                        "capture_fullscreen",
+                        "全画面キャプチャ",
+                        true,
+                        None::<&str>,
+                    )?,
+                    &MenuItem::with_id(
+                        app,
+                        "capture_window",
+                        "ウィンドウキャプチャ",
+                        true,
+                        None::<&str>,
+                    )?,
+                ],
+            )?;
+            let separator = PredefinedMenuItem::separator(app)?;
+            let quit = MenuItem::with_id(app, "quit", "終了", true, None::<&str>)?;
+
+            let menu = Menu::with_items(app, &[&show, &capture_submenu, &separator, &quit])?;
+
+            let tray = TrayIconBuilder::new()
+                .icon(
+                    app.default_window_icon()
+                        .cloned()
+                        .ok_or("Failed to get default window icon")?,
+                )
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .tooltip("AmeCapture")
+                .on_menu_event(move |app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "capture_region" => {
+                        let _ = app.emit("tray-capture", "region");
+                    }
+                    "capture_fullscreen" => {
+                        let _ = app.emit("tray-capture", "fullscreen");
+                    }
+                    "capture_window" => {
+                        let _ = app.emit("tray-capture", "window");
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+            Box::leak(Box::new(tray));
+
             tracing::info!("AmeCapture initialized successfully");
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let _ = window.hide();
+                api.prevent_close();
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::capture::capture,
