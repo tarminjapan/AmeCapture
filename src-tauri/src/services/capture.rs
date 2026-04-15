@@ -1,10 +1,8 @@
 use crate::error::{AppError, AppResult};
-use crate::models::capture::{CaptureRegion, CaptureResult};
+use crate::models::capture::CaptureResult;
 
 pub trait CaptureService: Send + Sync {
     fn capture_full_screen(&self, save_path: &str) -> AppResult<CaptureResult>;
-    #[allow(dead_code)]
-    fn capture_region(&self, region: &CaptureRegion, save_path: &str) -> AppResult<CaptureResult>;
     fn capture_window(&self, hwnd: isize, save_path: &str) -> AppResult<CaptureResult>;
 }
 
@@ -22,19 +20,6 @@ impl CaptureService for DefaultCaptureService {
         capture_screen(save_path)
     }
 
-    fn capture_region(&self, region: &CaptureRegion, _save_path: &str) -> AppResult<CaptureResult> {
-        tracing::info!(
-            "Region capture requested: x={}, y={}, width={}, height={}",
-            region.x,
-            region.y,
-            region.width,
-            region.height
-        );
-        Err(AppError::Capture(
-            "Region capture not yet implemented".into(),
-        ))
-    }
-
     fn capture_window(&self, hwnd: isize, save_path: &str) -> AppResult<CaptureResult> {
         tracing::info!("Window capture requested for hwnd={}", hwnd);
         capture_window_by_hwnd(hwnd, save_path)
@@ -46,16 +31,6 @@ impl CaptureService for DefaultCaptureService {
     fn capture_full_screen(&self, _save_path: &str) -> AppResult<CaptureResult> {
         Err(AppError::Capture(
             "Full screen capture is only supported on Windows".into(),
-        ))
-    }
-
-    fn capture_region(
-        &self,
-        _region: &CaptureRegion,
-        _save_path: &str,
-    ) -> AppResult<CaptureResult> {
-        Err(AppError::Capture(
-            "Region capture is only supported on Windows".into(),
         ))
     }
 

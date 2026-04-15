@@ -5,10 +5,6 @@ use crate::storage::StoragePathResolver;
 
 /// Service trait for storage path resolution and directory management.
 pub trait StorageService: Send + Sync {
-    /// Get the base save path.
-    #[allow(dead_code)]
-    fn get_base_path(&self) -> PathBuf;
-
     /// Ensure all storage directories exist. Creates them if missing.
     fn ensure_directories(&self) -> AppResult<()>;
 
@@ -43,10 +39,6 @@ impl DefaultStorageService {
 }
 
 impl StorageService for DefaultStorageService {
-    fn get_base_path(&self) -> PathBuf {
-        self.resolver.base_path().to_path_buf()
-    }
-
     fn ensure_directories(&self) -> AppResult<()> {
         crate::storage::ensure_storage_dirs(self.resolver.base_path())
     }

@@ -1,20 +1,19 @@
 use crate::error::AppResult;
 use crate::models::capture::WindowInfo;
 
-#[allow(dead_code)]
-pub fn enumerate_monitors() -> AppResult<Vec<MonitorInfo>> {
-    tracing::debug!("Enumerating monitors (not yet implemented)");
-    Ok(vec![])
-}
-
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct MonitorInfo {
-    pub id: u32,
-    pub name: String,
-    pub bounds: (i32, i32, i32, i32),
-    pub is_primary: bool,
-}
+// TODO: Implement monitor enumeration
+// pub fn enumerate_monitors() -> AppResult<Vec<MonitorInfo>> {
+//     tracing::debug!("Enumerating monitors (not yet implemented)");
+//     Ok(vec![])
+// }
+//
+// #[derive(Debug, Clone)]
+// pub struct MonitorInfo {
+//     pub id: u32,
+//     pub name: String,
+//     pub bounds: (i32, i32, i32, i32),
+//     pub is_primary: bool,
+// }
 
 #[cfg(target_os = "windows")]
 pub fn enumerate_windows() -> AppResult<Vec<WindowInfo>> {

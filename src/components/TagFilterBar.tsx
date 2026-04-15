@@ -12,7 +12,7 @@ export function TagFilterBar() {
 
   useEffect(() => {
     loadTags();
-  }, []);
+  }, [loadTags]);
 
   if (tags.length === 0) return null;
 

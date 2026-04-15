@@ -2,12 +2,10 @@ use std::sync::{Arc, Mutex};
 
 use rusqlite::params;
 
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 
 /// Repository trait for settings data access
 pub trait SettingsRepository: Send + Sync {
-    #[allow(dead_code)]
-    fn get(&self, key: &str) -> AppResult<Option<String>>;
     fn set(&self, key: &str, value: &str) -> AppResult<()>;
     fn get_all(&self) -> AppResult<Vec<(String, String)>>;
 }
@@ -24,19 +22,6 @@ impl SqliteSettingsRepository {
 }
 
 impl SettingsRepository for SqliteSettingsRepository {
-    fn get(&self, key: &str) -> AppResult<Option<String>> {
-        let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT value FROM app_settings WHERE key = ?1")?;
-
-        let result = stmt.query_row(params![key], |row| row.get::<_, String>(0));
-
-        match result {
-            Ok(value) => Ok(Some(value)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(AppError::from(e)),
-        }
-    }
-
     fn set(&self, key: &str, value: &str) -> AppResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(

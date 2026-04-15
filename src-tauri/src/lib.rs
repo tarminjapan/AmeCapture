@@ -1,3 +1,6 @@
+#![deny(clippy::all)]
+#![deny(warnings)]
+
 mod app_state;
 mod commands;
 mod config;
@@ -94,7 +97,7 @@ pub fn run() {
                 editor_service: Box::new(DefaultEditorService::new()),
                 thumbnail_service: Box::new(DefaultThumbnailService::new()),
                 storage_service: Box::new(storage_service),
-                db_conn: conn,
+                _db_conn: conn,
             };
 
             app.manage(app_state);
