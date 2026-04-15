@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { cn } from '@/lib/utils';
 
@@ -24,19 +24,33 @@ export function EditorCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const zoomRef = useRef(zoom);
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
 
   const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
+    (e: WheelEvent) => {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      onZoomChange(zoom + delta);
+      onZoomChange(zoomRef.current + delta);
     },
-    [zoom, onZoomChange],
+    [onZoomChange],
   );
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleWheel]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (e.button === 0 || e.button === 1) {
+      if (e.button === 1) {
         setIsPanning(true);
         setPanStart({ x: e.clientX - panX, y: e.clientY - panY });
       }
@@ -62,12 +76,11 @@ export function EditorCanvas({
     <div
       ref={containerRef}
       className={cn('relative overflow-hidden bg-muted/50', className)}
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+      style={{ cursor: isPanning ? 'grabbing' : 'default' }}
     >
       <div
         style={{
