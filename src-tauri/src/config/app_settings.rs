@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// Application settings
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub save_path: String,
     pub image_format: String,
