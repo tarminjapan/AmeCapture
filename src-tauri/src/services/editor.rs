@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 use std::path::Path;
 
-use image::{DynamicImage, Rgba, RgbaImage};
+use image::{Rgba, RgbaImage};
 use serde::Deserialize;
 
 use crate::error::{AppError, AppResult};
@@ -63,12 +63,13 @@ impl EditorService for DefaultEditorService {
     ) -> AppResult<()> {
         let edit: EditData = serde_json::from_str(annotations_json)
             .map_err(|e| AppError::Editor(format!("Invalid annotation data: {e}")))?;
-        let mut img = image::open(source_path)
+        let img = image::open(source_path)
             .map_err(|e| AppError::Editor(format!("Failed to open image: {e}")))?;
 
+        let mut rgba = img.to_rgba8();
         for annotation in &edit.annotations {
             match annotation {
-                Annotation::Arrow(arrow) => draw_arrow(&mut img, arrow),
+                Annotation::Arrow(arrow) => draw_arrow(&mut rgba, arrow),
             }
         }
 
@@ -77,7 +78,9 @@ impl EditorService for DefaultEditorService {
             std::fs::create_dir_all(parent)?;
         }
 
-        img.save(out_path)
+        let output_img = image::DynamicImage::ImageRgba8(rgba);
+        output_img
+            .save(out_path)
             .map_err(|e| AppError::Editor(format!("Failed to save image: {e}")))?;
         tracing::info!("Saved edited image to: {}", output_path);
         Ok(())
@@ -86,19 +89,21 @@ impl EditorService for DefaultEditorService {
 
 fn parse_color(color: &str) -> Rgba<u8> {
     let hex = color.trim_start_matches('#');
+    if hex.len() < 6 {
+        return Rgba([255, 0, 0, 255]);
+    }
     let r = u8::from_str_radix(&hex[0..2], 16).unwrap_or(255);
     let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(0);
     let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(0);
     Rgba([r, g, b, 255])
 }
 
-fn draw_arrow(img: &mut DynamicImage, arrow: &ArrowAnnotation) {
-    let mut rgba = img.to_rgba8();
+fn draw_arrow(rgba: &mut RgbaImage, arrow: &ArrowAnnotation) {
     let color = parse_color(&arrow.stroke_color);
     let width = arrow.stroke_width.max(1);
 
     draw_thick_line(
-        &mut rgba,
+        rgba,
         arrow.start_x,
         arrow.start_y,
         arrow.end_x,
@@ -109,16 +114,7 @@ fn draw_arrow(img: &mut DynamicImage, arrow: &ArrowAnnotation) {
 
     let angle = (arrow.end_y - arrow.start_y).atan2(arrow.end_x - arrow.start_x);
     let head_length = f64::from(width) * 4.0;
-    draw_arrowhead(
-        &mut rgba,
-        arrow.end_x,
-        arrow.end_y,
-        angle,
-        head_length,
-        color,
-    );
-
-    *img = DynamicImage::ImageRgba8(rgba);
+    draw_arrowhead(rgba, arrow.end_x, arrow.end_y, angle, head_length, color);
 }
 
 fn draw_thick_line(
@@ -229,11 +225,10 @@ fn fill_triangle(img: &mut RgbaImage, tri: &Triangle, color: Rgba<u8>) {
         }
 
         if count >= 2 {
-            let (x_start, x_end) = if intersections[0] < intersections[1] {
-                (intersections[0], intersections[1])
-            } else {
-                (intersections[1], intersections[0])
-            };
+            intersections[..count]
+                .sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            let x_start = intersections[0];
+            let x_end = intersections[count - 1];
 
             let xs = x_start.floor() as i32;
             let xe = x_end.ceil() as i32;
