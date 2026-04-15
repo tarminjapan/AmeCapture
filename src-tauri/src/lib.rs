@@ -15,7 +15,7 @@ use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
     tray::TrayIconBuilder,
-    Emitter, Manager, RunEvent,
+    Emitter, Manager,
 };
 
 use crate::app_state::AppState;
@@ -134,14 +134,19 @@ pub fn run() {
 
             let menu = Menu::with_items(app, &[&show, &capture_submenu, &separator, &quit])?;
 
-            let _tray = TrayIconBuilder::new()
-                .icon(app.default_window_icon().cloned().unwrap())
+            let tray = TrayIconBuilder::new()
+                .icon(
+                    app.default_window_icon()
+                        .cloned()
+                        .ok_or("Failed to get default window icon")?,
+                )
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .tooltip("AmeCapture")
                 .on_menu_event(move |app, event| match event.id.as_ref() {
                     "show" => {
                         if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
                             let _ = window.unminimize();
                             let _ = window.set_focus();
                         }
@@ -161,13 +166,14 @@ pub fn run() {
                     _ => {}
                 })
                 .build(app)?;
+            Box::leak(Box::new(tray));
 
             tracing::info!("AmeCapture initialized successfully");
             Ok(())
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                window.hide().unwrap();
+                let _ = window.hide();
                 api.prevent_close();
             }
         })
@@ -200,11 +206,6 @@ pub fn run() {
             commands::tag::get_items_by_tag,
             commands::tag::get_all_tags_for_items,
         ])
-        .build(tauri::generate_context!())
-        .expect("error while building tauri application")
-        .run(|_app_handle, event| {
-            if let RunEvent::ExitRequested { api, .. } = event {
-                api.prevent_exit();
-            }
-        });
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
