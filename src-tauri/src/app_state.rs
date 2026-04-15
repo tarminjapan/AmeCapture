@@ -20,5 +20,6 @@ pub struct AppState {
     pub editor_service: Box<dyn EditorService>,
     pub thumbnail_service: Box<dyn ThumbnailService>,
     pub storage_service: Box<dyn StorageService>,
+    #[allow(dead_code)]
     pub db_conn: Arc<Mutex<rusqlite::Connection>>,
 }
