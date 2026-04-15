@@ -22,6 +22,8 @@ interface EditorToolbarProps {
   canUndo: boolean;
   canRedo: boolean;
   isDirty: boolean;
+  strokeColor: string;
+  strokeWidth: number;
   onToolSelect: (tool: EditorTool) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -31,6 +33,8 @@ interface EditorToolbarProps {
   onSave: () => void;
   onCopy: () => void;
   onBack: () => void;
+  onStrokeColorChange: (color: string) => void;
+  onStrokeWidthChange: (width: number) => void;
 }
 
 const tools: { tool: EditorTool; icon: React.ElementType; label: string }[] = [
@@ -42,12 +46,20 @@ const tools: { tool: EditorTool; icon: React.ElementType; label: string }[] = [
   { tool: 'crop', icon: Crop, label: 'トリミング' },
 ];
 
+const strokeWidths = [
+  { value: 1, label: '細' },
+  { value: 3, label: '中' },
+  { value: 5, label: '太' },
+];
+
 export function EditorToolbar({
   activeTool,
   zoom,
   canUndo,
   canRedo,
   isDirty,
+  strokeColor,
+  strokeWidth,
   onToolSelect,
   onZoomIn,
   onZoomOut,
@@ -57,7 +69,11 @@ export function EditorToolbar({
   onSave,
   onCopy,
   onBack,
+  onStrokeColorChange,
+  onStrokeWidthChange,
 }: EditorToolbarProps) {
+  const isDrawingTool = activeTool === 'arrow' || activeTool === 'rectangle';
+
   return (
     <div className="flex items-center justify-between border-b border-border px-4 py-2">
       <div className="flex items-center gap-1">
@@ -83,6 +99,35 @@ export function EditorToolbar({
             <Icon className="w-4 h-4" />
           </button>
         ))}
+        {isDrawingTool && (
+          <>
+            <div className="w-px h-6 bg-border mx-2" />
+            <input
+              type="color"
+              value={strokeColor}
+              onChange={(e) => onStrokeColorChange(e.target.value)}
+              className="w-6 h-6 rounded cursor-pointer border border-border"
+              title="色"
+            />
+            <div className="flex items-center gap-0.5">
+              {strokeWidths.map(({ value, label }) => (
+                <button
+                  key={value}
+                  className={cn(
+                    'px-1.5 py-0.5 text-xs rounded transition-colors',
+                    strokeWidth === value
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent text-muted-foreground',
+                  )}
+                  onClick={() => onStrokeWidthChange(value)}
+                  title={label}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-1">

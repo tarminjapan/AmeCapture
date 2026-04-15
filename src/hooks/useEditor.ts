@@ -7,8 +7,10 @@ export function useEditor() {
 
   const saveEdit = async (itemId: string) => {
     try {
+      const editData = JSON.stringify({ annotations: store.annotations });
       const result = await invoke<CommandResult<string>>('save_edit', {
         itemId,
+        editData,
       });
       if (result.success) {
         store.setDirty(false);
@@ -20,26 +22,12 @@ export function useEditor() {
     }
   };
 
-  const undo = async () => {
-    try {
-      const result = await invoke<CommandResult<null>>('undo');
-      if (result.success) {
-        // Backend will return updated state
-      }
-    } catch (error) {
-      console.error('Undo failed:', error);
-    }
+  const undo = () => {
+    store.undoAnnotations();
   };
 
-  const redo = async () => {
-    try {
-      const result = await invoke<CommandResult<null>>('redo');
-      if (result.success) {
-        // Backend will return updated state
-      }
-    } catch (error) {
-      console.error('Redo failed:', error);
-    }
+  const redo = () => {
+    store.redoAnnotations();
   };
 
   return {
