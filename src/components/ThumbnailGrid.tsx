@@ -3,6 +3,7 @@ import type { WorkspaceItem } from '@/types';
 import { Star, StarOff, Trash2, ImageIcon, Film } from 'lucide-react';
 import { MEDIA_TYPE_CONFIG } from '@/lib/mediaTypeConfig';
 import { useTagStore } from '@/stores/tagStore';
+import { useEditorStore } from '@/stores/editorStore';
 
 interface ThumbnailGridProps {
   items: WorkspaceItem[];
@@ -10,6 +11,7 @@ interface ThumbnailGridProps {
   onSelect: (ids: string[]) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onDelete: (id: string) => void;
+  onOpenEditor: () => void;
 }
 
 export function ThumbnailGrid({
@@ -18,8 +20,10 @@ export function ThumbnailGrid({
   onSelect,
   onToggleFavorite,
   onDelete,
+  onOpenEditor,
 }: ThumbnailGridProps) {
   const itemTags = useTagStore((s) => s.itemTags);
+  const setEditingItem = useEditorStore((s) => s.setEditingItem);
 
   const handleClick = (id: string, e: React.MouseEvent) => {
     if (e.ctrlKey || e.metaKey) {
@@ -33,8 +37,10 @@ export function ThumbnailGrid({
   };
 
   const handleDoubleClick = (item: WorkspaceItem) => {
-    // TODO: Open editor with this item
-    console.log('Open editor for:', item.id);
+    if (item.type === 'image') {
+      setEditingItem(item.id);
+      onOpenEditor();
+    }
   };
 
   return (

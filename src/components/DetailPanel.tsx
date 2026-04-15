@@ -4,6 +4,7 @@ import type { WorkspaceItem } from '@/types';
 import { X, Star, Copy, FolderOpen, Trash2, Edit3, Check } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
 import { TagInput } from '@/components/TagInput';
+import { useEditorStore } from '@/stores/editorStore';
 
 interface DetailPanelProps {
   item: WorkspaceItem;
@@ -13,6 +14,7 @@ interface DetailPanelProps {
   onRename: (id: string, title: string) => void;
   onShowInFolder: (id: string) => void;
   onCopyToClipboard: (id: string) => void;
+  onOpenEditor: () => void;
 }
 
 export function DetailPanel({
@@ -23,10 +25,12 @@ export function DetailPanel({
   onRename,
   onShowInFolder,
   onCopyToClipboard,
+  onOpenEditor,
 }: DetailPanelProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(item.title);
   const inputRef = useRef<HTMLInputElement>(null);
+  const setEditingItem = useEditorStore((s) => s.setEditingItem);
 
   useEffect(() => {
     setEditTitle(item.title);
@@ -142,7 +146,15 @@ export function DetailPanel({
 
       {/* Actions */}
       <div className="space-y-2">
-        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent">
+        <button
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent"
+          onClick={() => {
+            if (item.type === 'image') {
+              setEditingItem(item.id);
+              onOpenEditor();
+            }
+          }}
+        >
           <Edit3 className="w-4 h-4" />
           編集
         </button>
