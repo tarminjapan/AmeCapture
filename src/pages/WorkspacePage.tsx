@@ -17,7 +17,11 @@ import { ImageOff, Settings, Star } from 'lucide-react';
 import { getTypeLabel } from '@/lib/mediaTypeConfig';
 import type { CaptureRegion, RegionCaptureInfo, WindowInfo } from '@/types';
 
-export default function WorkspacePage() {
+interface WorkspacePageProps {
+  onNavigateToEditor: () => void;
+}
+
+export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps) {
   const items = useWorkspaceStore((s) => s.items);
   const selectedItemIds = useWorkspaceStore((s) => s.selectedItemIds);
   const searchQuery = useWorkspaceStore((s) => s.searchQuery);
@@ -251,6 +255,7 @@ export default function WorkspacePage() {
               onSelect={handleSelect}
               onToggleFavorite={toggleFavorite}
               onDelete={deleteItem}
+              onOpenEditor={onNavigateToEditor}
             />
           )}
         </div>
@@ -265,6 +270,7 @@ export default function WorkspacePage() {
             onRename={renameItem}
             onShowInFolder={showInFolder}
             onCopyToClipboard={copyImageToClipboard}
+            onOpenEditor={onNavigateToEditor}
           />
         )}
       </div>
