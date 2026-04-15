@@ -5,7 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { EditorToolbar } from '@/components/EditorToolbar';
 import { EditorCanvas } from '@/components/EditorCanvas';
 import { invoke } from '@tauri-apps/api/core';
-import type { CommandResult } from '@/types';
+import type { CommandResult, EditorAnnotation } from '@/types';
 
 interface EditorPageProps {
   onBack: () => void;
@@ -20,9 +20,15 @@ export default function EditorPage({ onBack }: EditorPageProps) {
   const canUndo = useEditorStore((s) => s.canUndo);
   const canRedo = useEditorStore((s) => s.canRedo);
   const isDirty = useEditorStore((s) => s.isDirty);
+  const strokeColor = useEditorStore((s) => s.strokeColor);
+  const strokeWidth = useEditorStore((s) => s.strokeWidth);
+  const annotations = useEditorStore((s) => s.annotations);
   const setActiveTool = useEditorStore((s) => s.setActiveTool);
   const setZoom = useEditorStore((s) => s.setZoom);
   const setPan = useEditorStore((s) => s.setPan);
+  const setStrokeColor = useEditorStore((s) => s.setStrokeColor);
+  const setStrokeWidth = useEditorStore((s) => s.setStrokeWidth);
+  const addAnnotation = useEditorStore((s) => s.addAnnotation);
   const resetEditor = useEditorStore((s) => s.resetEditor);
 
   const { saveEdit, undo, redo } = useEditor();
@@ -73,6 +79,13 @@ export default function EditorPage({ onBack }: EditorPageProps) {
     onBack();
   }, [onBack, resetEditor]);
 
+  const handleAddAnnotation = useCallback(
+    (annotation: EditorAnnotation) => {
+      addAnnotation(annotation);
+    },
+    [addAnnotation],
+  );
+
   if (!editingItem) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -97,6 +110,8 @@ export default function EditorPage({ onBack }: EditorPageProps) {
         canUndo={canUndo}
         canRedo={canRedo}
         isDirty={isDirty}
+        strokeColor={strokeColor}
+        strokeWidth={strokeWidth}
         onToolSelect={setActiveTool}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -106,14 +121,21 @@ export default function EditorPage({ onBack }: EditorPageProps) {
         onSave={handleSave}
         onCopy={handleCopy}
         onBack={handleBack}
+        onStrokeColorChange={setStrokeColor}
+        onStrokeWidthChange={setStrokeWidth}
       />
       <EditorCanvas
         imagePath={editingItem.currentPath}
         zoom={zoom}
         panX={panX}
         panY={panY}
+        activeTool={activeTool}
+        strokeColor={strokeColor}
+        strokeWidth={strokeWidth}
+        annotations={annotations}
         onZoomChange={setZoom}
         onPanChange={setPan}
+        onAddAnnotation={handleAddAnnotation}
         className="flex-1"
       />
     </div>

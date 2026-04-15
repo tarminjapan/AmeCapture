@@ -56,6 +56,19 @@ export interface WindowCaptureInfo {
 
 export type EditorTool = 'select' | 'arrow' | 'text' | 'rectangle' | 'mosaic' | 'crop';
 
+export interface ArrowAnnotation {
+  id: string;
+  type: 'arrow';
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  strokeColor: string;
+  strokeWidth: number;
+}
+
+export type EditorAnnotation = ArrowAnnotation;
+
 export interface EditorState {
   activeTool: EditorTool;
   strokeColor: string;
