@@ -341,6 +341,7 @@ export function EditorCanvas({
                     height={ann.height}
                     stroke={ann.strokeColor}
                     strokeWidth={ann.strokeWidth}
+                    strokeLinejoin="round"
                     fill="none"
                   />
                 );
@@ -378,6 +379,7 @@ export function EditorCanvas({
                 height={Math.abs(drawing.endY - drawing.startY)}
                 stroke={strokeColor}
                 strokeWidth={strokeWidth}
+                strokeLinejoin="round"
                 fill="none"
               />
             )}
