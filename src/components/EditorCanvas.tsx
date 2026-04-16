@@ -146,7 +146,10 @@ export function EditorCanvas({
         setPanStart({ x: e.clientX - panX, y: e.clientY - panY });
         return;
       }
-      if (e.button === 0 && (activeTool === 'arrow' || activeTool === 'rectangle')) {
+      if (
+        e.button === 0 &&
+        (activeTool === 'arrow' || activeTool === 'rectangle' || activeTool === 'mosaic')
+      ) {
         const coords = getImageCoords(e);
         if (coords) {
           setDrawing({
@@ -216,6 +219,18 @@ export function EditorCanvas({
             strokeColor,
             strokeWidth,
           });
+        } else if (activeTool === 'mosaic') {
+          const x = Math.min(drawing.startX, drawing.endX);
+          const y = Math.min(drawing.startY, drawing.endY);
+          onAddAnnotation({
+            id: generateId(),
+            type: 'mosaic',
+            x,
+            y,
+            width: Math.abs(dx),
+            height: Math.abs(dy),
+            strength: 20, // Default strength
+          });
         }
       }
       setDrawing(null);
@@ -236,7 +251,7 @@ export function EditorCanvas({
 
   const cursor = isPanning
     ? 'grabbing'
-    : activeTool === 'arrow' || activeTool === 'rectangle'
+    : activeTool === 'arrow' || activeTool === 'rectangle' || activeTool === 'mosaic'
       ? 'crosshair'
       : activeTool === 'text'
         ? 'text'
@@ -346,6 +361,31 @@ export function EditorCanvas({
                   />
                 );
               }
+              if (ann.type === 'mosaic') {
+                return (
+                  <g key={ann.id}>
+                    <rect
+                      x={ann.x}
+                      y={ann.y}
+                      width={ann.width}
+                      height={ann.height}
+                      fill="rgba(0,0,0,0.2)"
+                      stroke="#000"
+                      strokeWidth="1"
+                      strokeDasharray="4 2"
+                    />
+                    <text
+                      x={ann.x + 4}
+                      y={ann.y + 14}
+                      fontSize="10"
+                      fill="#fff"
+                      style={{ pointerEvents: 'none', userSelect: 'none' }}
+                    >
+                      Mosaic
+                    </text>
+                  </g>
+                );
+              }
               return null;
             })}
             {drawing && activeTool === 'arrow' && (
@@ -381,6 +421,18 @@ export function EditorCanvas({
                 strokeWidth={strokeWidth}
                 strokeLinejoin="round"
                 fill="none"
+              />
+            )}
+            {drawing && activeTool === 'mosaic' && (
+              <rect
+                x={Math.min(drawing.startX, drawing.endX)}
+                y={Math.min(drawing.startY, drawing.endY)}
+                width={Math.abs(drawing.endX - drawing.startX)}
+                height={Math.abs(drawing.endY - drawing.startY)}
+                fill="rgba(0,0,0,0.1)"
+                stroke="#000"
+                strokeWidth="1"
+                strokeDasharray="4 2"
               />
             )}
           </svg>

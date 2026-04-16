@@ -88,7 +88,21 @@ export interface RectangleAnnotation {
   strokeWidth: number;
 }
 
-export type EditorAnnotation = ArrowAnnotation | TextAnnotation | RectangleAnnotation;
+export interface MosaicAnnotation {
+  id: string;
+  type: 'mosaic';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  strength: number;
+}
+
+export type EditorAnnotation =
+  | ArrowAnnotation
+  | TextAnnotation
+  | RectangleAnnotation
+  | MosaicAnnotation;
 
 export interface EditorState {
   activeTool: EditorTool;
