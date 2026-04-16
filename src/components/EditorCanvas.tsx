@@ -11,6 +11,7 @@ interface EditorCanvasProps {
   activeTool: EditorTool;
   strokeColor: string;
   strokeWidth: number;
+  fontSize: number;
   annotations: EditorAnnotation[];
   onZoomChange: (zoom: number) => void;
   onPanChange: (x: number, y: number) => void;
@@ -58,6 +59,7 @@ export function EditorCanvas({
   activeTool,
   strokeColor,
   strokeWidth,
+  fontSize,
   annotations,
   onZoomChange,
   onPanChange,
@@ -66,6 +68,7 @@ export function EditorCanvas({
 }: EditorCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [imgSize, setImgSize] = useState({ width: 0, height: 0 });
@@ -74,6 +77,11 @@ export function EditorCanvas({
     startY: number;
     endX: number;
     endY: number;
+  } | null>(null);
+  const [textInput, setTextInput] = useState<{
+    x: number;
+    y: number;
+    value: string;
   } | null>(null);
 
   const zoomRef = useRef(zoom);
@@ -110,6 +118,27 @@ export function EditorCanvas({
     };
   }, [handleWheel]);
 
+  useEffect(() => {
+    if (textInput && textInputRef.current) {
+      textInputRef.current.focus();
+    }
+  }, [textInput]);
+
+  const commitText = useCallback(() => {
+    if (textInput && textInput.value.trim()) {
+      onAddAnnotation({
+        id: generateId(),
+        type: 'text',
+        x: textInput.x,
+        y: textInput.y,
+        text: textInput.value.trim(),
+        fontSize,
+        strokeColor,
+      });
+    }
+    setTextInput(null);
+  }, [textInput, fontSize, strokeColor, onAddAnnotation]);
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button === 1) {
@@ -128,8 +157,18 @@ export function EditorCanvas({
           });
         }
       }
+      if (e.button === 0 && activeTool === 'text') {
+        if (textInput) {
+          commitText();
+          return;
+        }
+        const coords = getImageCoords(e);
+        if (coords) {
+          setTextInput({ x: coords.x, y: coords.y, value: '' });
+        }
+      }
     },
-    [panX, panY, activeTool, getImageCoords],
+    [panX, panY, activeTool, getImageCoords, textInput, commitText],
   );
 
   const handleMouseMove = useCallback(
@@ -169,7 +208,24 @@ export function EditorCanvas({
     setIsPanning(false);
   }, [drawing, strokeColor, strokeWidth, onAddAnnotation]);
 
-  const cursor = isPanning ? 'grabbing' : activeTool === 'arrow' ? 'crosshair' : 'default';
+  const handleTextKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        commitText();
+      } else if (e.key === 'Escape') {
+        setTextInput(null);
+      }
+    },
+    [commitText],
+  );
+
+  const cursor = isPanning
+    ? 'grabbing'
+    : activeTool === 'arrow'
+      ? 'crosshair'
+      : activeTool === 'text'
+        ? 'text'
+        : 'default';
 
   const imageUrl = convertFileSrc(imagePath);
 
@@ -219,29 +275,49 @@ export function EditorCanvas({
               pointerEvents: 'none',
             }}
           >
-            {annotations.map((ann) => (
-              <g key={ann.id}>
-                <line
-                  x1={ann.startX}
-                  y1={ann.startY}
-                  x2={ann.endX}
-                  y2={ann.endY}
-                  stroke={ann.strokeColor}
-                  strokeWidth={ann.strokeWidth}
-                  strokeLinecap="round"
-                />
-                <polygon
-                  points={getArrowheadPoints(
-                    ann.startX,
-                    ann.startY,
-                    ann.endX,
-                    ann.endY,
-                    ann.strokeWidth,
-                  )}
-                  fill={ann.strokeColor}
-                />
-              </g>
-            ))}
+            {annotations.map((ann) => {
+              if (ann.type === 'arrow') {
+                return (
+                  <g key={ann.id}>
+                    <line
+                      x1={ann.startX}
+                      y1={ann.startY}
+                      x2={ann.endX}
+                      y2={ann.endY}
+                      stroke={ann.strokeColor}
+                      strokeWidth={ann.strokeWidth}
+                      strokeLinecap="round"
+                    />
+                    <polygon
+                      points={getArrowheadPoints(
+                        ann.startX,
+                        ann.startY,
+                        ann.endX,
+                        ann.endY,
+                        ann.strokeWidth,
+                      )}
+                      fill={ann.strokeColor}
+                    />
+                  </g>
+                );
+              }
+              if (ann.type === 'text') {
+                return (
+                  <text
+                    key={ann.id}
+                    x={ann.x}
+                    y={ann.y}
+                    fontSize={ann.fontSize}
+                    fill={ann.strokeColor}
+                    dominantBaseline="auto"
+                    style={{ userSelect: 'none' }}
+                  >
+                    {ann.text}
+                  </text>
+                );
+              }
+              return null;
+            })}
             {drawing && (
               <g>
                 <line
@@ -266,6 +342,28 @@ export function EditorCanvas({
               </g>
             )}
           </svg>
+        )}
+        {textInput && imgSize.width > 0 && (
+          <input
+            ref={textInputRef}
+            type="text"
+            value={textInput.value}
+            onChange={(e) =>
+              setTextInput((prev) => (prev ? { ...prev, value: e.target.value } : null))
+            }
+            onKeyDown={handleTextKeyDown}
+            onBlur={commitText}
+            className="border-none bg-transparent outline-none"
+            style={{
+              position: 'absolute',
+              left: textInput.x,
+              top: textInput.y - fontSize,
+              fontSize: `${fontSize}px`,
+              color: strokeColor,
+              minWidth: '50px',
+              caretColor: strokeColor,
+            }}
+          />
         )}
       </div>
     </div>

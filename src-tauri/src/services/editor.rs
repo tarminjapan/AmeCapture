@@ -1,7 +1,9 @@
 use std::f64::consts::PI;
 use std::path::Path;
 
+use ab_glyph::{FontRef, PxScale};
 use image::{Rgba, RgbaImage};
+use imageproc::drawing::draw_text_mut;
 use serde::Deserialize;
 
 use crate::error::{AppError, AppResult};
@@ -16,9 +18,12 @@ struct EditData {
 enum Annotation {
     #[serde(rename = "arrow")]
     Arrow(ArrowAnnotation),
+    #[serde(rename = "text")]
+    Text(TextAnnotation),
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ArrowAnnotation {
     start_x: f64,
     start_y: f64,
@@ -26,6 +31,16 @@ struct ArrowAnnotation {
     end_y: f64,
     stroke_color: String,
     stroke_width: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TextAnnotation {
+    x: f64,
+    y: f64,
+    text: String,
+    font_size: f64,
+    stroke_color: String,
 }
 
 struct Triangle {
@@ -67,9 +82,13 @@ impl EditorService for DefaultEditorService {
             .map_err(|e| AppError::Editor(format!("Failed to open image: {e}")))?;
 
         let mut rgba = img.to_rgba8();
+        let font_data = load_system_font();
         for annotation in &edit.annotations {
             match annotation {
                 Annotation::Arrow(arrow) => draw_arrow(&mut rgba, arrow),
+                Annotation::Text(text) => {
+                    draw_text_annotation(&mut rgba, text, font_data.as_deref())
+                }
             }
         }
 
@@ -96,6 +115,69 @@ fn parse_color(color: &str) -> Rgba<u8> {
     let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(0);
     let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(0);
     Rgba([r, g, b, 255])
+}
+
+fn load_system_font() -> Option<Vec<u8>> {
+    let font_paths: &[&str] = if cfg!(target_os = "windows") {
+        &[
+            "C:\\Windows\\Fonts\\arial.ttf",
+            "C:\\Windows\\Fonts\\segoeui.ttf",
+            "C:\\Windows\\Fonts\\meiryo.ttc",
+        ]
+    } else if cfg!(target_os = "macos") {
+        &[
+            "/System/Library/Fonts/Helvetica.ttc",
+            "/System/Library/Fonts/SFNSMono.ttf",
+            "/Library/Fonts/Arial.ttf",
+        ]
+    } else {
+        &[
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        ]
+    };
+
+    font_paths.iter().find_map(|p| std::fs::read(p).ok())
+}
+
+fn draw_text_annotation(rgba: &mut RgbaImage, text_ann: &TextAnnotation, font_data: Option<&[u8]>) {
+    let font_data = match font_data {
+        Some(d) => d,
+        None => {
+            tracing::error!("No suitable font found on system");
+            return;
+        }
+    };
+
+    let font = match FontRef::try_from_slice(font_data) {
+        Ok(f) => f,
+        Err(e) => {
+            tracing::error!("Failed to load font: {}", e);
+            return;
+        }
+    };
+
+    let scale = PxScale {
+        x: text_ann.font_size as f32,
+        y: text_ann.font_size as f32,
+    };
+    let color = parse_color(&text_ann.stroke_color);
+
+    let mut y_offset = 0i32;
+
+    for line in text_ann.text.split('\n') {
+        draw_text_mut(
+            rgba,
+            color,
+            text_ann.x as i32,
+            (text_ann.y - text_ann.font_size) as i32 + y_offset,
+            scale,
+            &font,
+            line,
+        );
+        y_offset += text_ann.font_size as i32;
+    }
 }
 
 fn draw_arrow(rgba: &mut RgbaImage, arrow: &ArrowAnnotation) {
