@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { cn } from '@/lib/utils';
-import type { EditorAnnotation, EditorTool } from '@/types';
+import type { CropAnnotation, EditorAnnotation, EditorTool } from '@/types';
 
 interface EditorCanvasProps {
   imagePath: string;
@@ -16,6 +16,7 @@ interface EditorCanvasProps {
   onZoomChange: (zoom: number) => void;
   onPanChange: (x: number, y: number) => void;
   onAddAnnotation: (annotation: EditorAnnotation) => void;
+  onCropAnnotation: (annotation: CropAnnotation) => void;
   className?: string;
 }
 
@@ -64,6 +65,7 @@ export function EditorCanvas({
   onZoomChange,
   onPanChange,
   onAddAnnotation,
+  onCropAnnotation,
   className,
 }: EditorCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -148,7 +150,10 @@ export function EditorCanvas({
       }
       if (
         e.button === 0 &&
-        (activeTool === 'arrow' || activeTool === 'rectangle' || activeTool === 'mosaic')
+        (activeTool === 'arrow' ||
+          activeTool === 'rectangle' ||
+          activeTool === 'mosaic' ||
+          activeTool === 'crop')
       ) {
         const coords = getImageCoords(e);
         if (coords) {
@@ -231,12 +236,23 @@ export function EditorCanvas({
             height: Math.abs(dy),
             strength: 20, // Default strength
           });
+        } else if (activeTool === 'crop') {
+          const x = Math.min(drawing.startX, drawing.endX);
+          const y = Math.min(drawing.startY, drawing.endY);
+          onCropAnnotation({
+            id: generateId(),
+            type: 'crop',
+            x,
+            y,
+            width: Math.abs(dx),
+            height: Math.abs(dy),
+          });
         }
       }
       setDrawing(null);
     }
     setIsPanning(false);
-  }, [drawing, activeTool, strokeColor, strokeWidth, onAddAnnotation]);
+  }, [drawing, activeTool, strokeColor, strokeWidth, onAddAnnotation, onCropAnnotation]);
 
   const handleTextKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -251,7 +267,10 @@ export function EditorCanvas({
 
   const cursor = isPanning
     ? 'grabbing'
-    : activeTool === 'arrow' || activeTool === 'rectangle' || activeTool === 'mosaic'
+    : activeTool === 'arrow' ||
+        activeTool === 'rectangle' ||
+        activeTool === 'mosaic' ||
+        activeTool === 'crop'
       ? 'crosshair'
       : activeTool === 'text'
         ? 'text'
@@ -386,6 +405,53 @@ export function EditorCanvas({
                   </g>
                 );
               }
+              if (ann.type === 'crop') {
+                return (
+                  <g key={ann.id}>
+                    <rect x={0} y={0} width={imgSize.width} height={ann.y} fill="rgba(0,0,0,0.5)" />
+                    <rect
+                      x={0}
+                      y={ann.y}
+                      width={ann.x}
+                      height={ann.height}
+                      fill="rgba(0,0,0,0.5)"
+                    />
+                    <rect
+                      x={ann.x + ann.width}
+                      y={ann.y}
+                      width={imgSize.width - ann.x - ann.width}
+                      height={ann.height}
+                      fill="rgba(0,0,0,0.5)"
+                    />
+                    <rect
+                      x={0}
+                      y={ann.y + ann.height}
+                      width={imgSize.width}
+                      height={imgSize.height - ann.y - ann.height}
+                      fill="rgba(0,0,0,0.5)"
+                    />
+                    <rect
+                      x={ann.x}
+                      y={ann.y}
+                      width={ann.width}
+                      height={ann.height}
+                      fill="none"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      strokeDasharray="6 3"
+                    />
+                    <text
+                      x={ann.x + 4}
+                      y={ann.y + 14}
+                      fontSize="10"
+                      fill="#fff"
+                      style={{ pointerEvents: 'none', userSelect: 'none' }}
+                    >
+                      Crop
+                    </text>
+                  </g>
+                );
+              }
               return null;
             })}
             {drawing && activeTool === 'arrow' && (
@@ -435,6 +501,44 @@ export function EditorCanvas({
                 strokeDasharray="4 2"
               />
             )}
+            {drawing &&
+              activeTool === 'crop' &&
+              (() => {
+                const cx = Math.min(drawing.startX, drawing.endX);
+                const cy = Math.min(drawing.startY, drawing.endY);
+                const cw = Math.abs(drawing.endX - drawing.startX);
+                const ch = Math.abs(drawing.endY - drawing.startY);
+                return (
+                  <g>
+                    <rect x={0} y={0} width={imgSize.width} height={cy} fill="rgba(0,0,0,0.5)" />
+                    <rect x={0} y={cy} width={cx} height={ch} fill="rgba(0,0,0,0.5)" />
+                    <rect
+                      x={cx + cw}
+                      y={cy}
+                      width={imgSize.width - cx - cw}
+                      height={ch}
+                      fill="rgba(0,0,0,0.5)"
+                    />
+                    <rect
+                      x={0}
+                      y={cy + ch}
+                      width={imgSize.width}
+                      height={imgSize.height - cy - ch}
+                      fill="rgba(0,0,0,0.5)"
+                    />
+                    <rect
+                      x={cx}
+                      y={cy}
+                      width={cw}
+                      height={ch}
+                      fill="none"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      strokeDasharray="6 3"
+                    />
+                  </g>
+                );
+              })()}
           </svg>
         )}
         {textInput && imgSize.width > 0 && (

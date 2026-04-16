@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { EditorAnnotation, EditorTool } from '@/types';
+import type { CropAnnotation, EditorAnnotation, EditorTool } from '@/types';
 
 interface EditorState {
   activeTool: EditorTool;
@@ -31,6 +31,7 @@ interface EditorState {
   setEditingItem: (itemId: string | null) => void;
   resetEditor: () => void;
   addAnnotation: (annotation: EditorAnnotation) => void;
+  replaceCropAnnotation: (annotation: CropAnnotation) => void;
   removeAnnotation: (id: string) => void;
   clearAnnotations: () => void;
   undoAnnotations: () => void;
@@ -74,6 +75,20 @@ export const useEditorStore = create<EditorState>((set) => ({
   addAnnotation: (annotation) =>
     set((state) => {
       const newAnnotations = [...state.annotations, annotation];
+      return {
+        annotationPast: [...state.annotationPast, state.annotations],
+        annotationFuture: [],
+        annotations: newAnnotations,
+        isDirty: true,
+        canUndo: true,
+        canRedo: false,
+      };
+    }),
+
+  replaceCropAnnotation: (annotation) =>
+    set((state) => {
+      const withoutCrop = state.annotations.filter((a) => a.type !== 'crop');
+      const newAnnotations = [...withoutCrop, annotation];
       return {
         annotationPast: [...state.annotationPast, state.annotations],
         annotationFuture: [],

@@ -24,9 +24,11 @@ enum Annotation {
     Rectangle(RectangleAnnotation),
     #[serde(rename = "mosaic")]
     Mosaic(MosaicAnnotation),
+    #[serde(rename = "crop")]
+    Crop(CropAnnotation),
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct ArrowAnnotation {
     start_x: f64,
@@ -37,7 +39,7 @@ struct ArrowAnnotation {
     stroke_width: u32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct TextAnnotation {
     x: f64,
@@ -47,7 +49,7 @@ struct TextAnnotation {
     stroke_color: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct RectangleAnnotation {
     x: f64,
@@ -58,7 +60,7 @@ struct RectangleAnnotation {
     stroke_width: u32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct MosaicAnnotation {
     x: f64,
@@ -66,6 +68,15 @@ struct MosaicAnnotation {
     width: f64,
     height: f64,
     strength: u32,
+}
+
+#[derive(Deserialize, Copy, Clone)]
+#[serde(rename_all = "camelCase")]
+struct CropAnnotation {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
 }
 
 struct Triangle {
@@ -108,14 +119,56 @@ impl EditorService for DefaultEditorService {
 
         let mut rgba = img.to_rgba8();
         let font_data = load_system_font();
+
+        let crop_region = edit.annotations.iter().find_map(|a| match a {
+            Annotation::Crop(c) => Some(*c),
+            _ => None,
+        });
+
+        if let Some(crop) = crop_region {
+            rgba = apply_crop(&mut rgba, &crop);
+        }
+
+        let offset_x = crop_region.map_or(0.0, |c| c.x);
+        let offset_y = crop_region.map_or(0.0, |c| c.y);
+
         for annotation in &edit.annotations {
             match annotation {
-                Annotation::Arrow(arrow) => draw_arrow(&mut rgba, arrow),
-                Annotation::Text(text) => {
-                    draw_text_annotation(&mut rgba, text, font_data.as_deref())
+                Annotation::Arrow(arrow) => {
+                    let adjusted = ArrowAnnotation {
+                        start_x: arrow.start_x - offset_x,
+                        start_y: arrow.start_y - offset_y,
+                        end_x: arrow.end_x - offset_x,
+                        end_y: arrow.end_y - offset_y,
+                        ..arrow.clone()
+                    };
+                    draw_arrow(&mut rgba, &adjusted);
                 }
-                Annotation::Rectangle(rect) => draw_rectangle(&mut rgba, rect),
-                Annotation::Mosaic(mosaic) => draw_mosaic(&mut rgba, mosaic),
+                Annotation::Text(text) => {
+                    let adjusted = TextAnnotation {
+                        x: text.x - offset_x,
+                        y: text.y - offset_y,
+                        ..text.clone()
+                    };
+                    draw_text_annotation(&mut rgba, &adjusted, font_data.as_deref());
+                }
+                Annotation::Rectangle(rect) => {
+                    let adjusted = RectangleAnnotation {
+                        x: rect.x - offset_x,
+                        y: rect.y - offset_y,
+                        ..rect.clone()
+                    };
+                    draw_rectangle(&mut rgba, &adjusted);
+                }
+                Annotation::Mosaic(mosaic) => {
+                    let adjusted = MosaicAnnotation {
+                        x: mosaic.x - offset_x,
+                        y: mosaic.y - offset_y,
+                        ..mosaic.clone()
+                    };
+                    draw_mosaic(&mut rgba, &adjusted);
+                }
+                Annotation::Crop(_) => {}
             }
         }
 
@@ -142,6 +195,27 @@ fn parse_color(color: &str) -> Rgba<u8> {
     let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(0);
     let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(0);
     Rgba([r, g, b, 255])
+}
+
+fn apply_crop(rgba: &mut RgbaImage, crop: &CropAnnotation) -> RgbaImage {
+    let img_w = rgba.width();
+    let img_h = rgba.height();
+
+    let x0 = crop.x.max(0.0).round() as u32;
+    let y0 = crop.y.max(0.0).round() as u32;
+    let x1 = (crop.x + crop.width).min(f64::from(img_w)).round() as u32;
+    let y1 = (crop.y + crop.height).min(f64::from(img_h)).round() as u32;
+
+    let crop_w = x1.saturating_sub(x0);
+    let crop_h = y1.saturating_sub(y0);
+
+    if crop_w == 0 || crop_h == 0 {
+        return std::mem::take(rgba);
+    }
+
+    let dyn_img = image::DynamicImage::ImageRgba8(std::mem::take(rgba));
+    let cropped = dyn_img.crop_imm(x0, y0, crop_w, crop_h);
+    cropped.to_rgba8()
 }
 
 fn load_system_font() -> Option<Vec<u8>> {
