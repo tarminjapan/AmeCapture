@@ -408,26 +408,32 @@ export function EditorCanvas({
               if (ann.type === 'crop') {
                 return (
                   <g key={ann.id}>
-                    <rect x={0} y={0} width={imgSize.width} height={ann.y} fill="rgba(0,0,0,0.5)" />
                     <rect
                       x={0}
-                      y={ann.y}
-                      width={ann.x}
-                      height={ann.height}
+                      y={0}
+                      width={imgSize.width}
+                      height={Math.max(0, ann.y)}
+                      fill="rgba(0,0,0,0.5)"
+                    />
+                    <rect
+                      x={0}
+                      y={Math.max(0, ann.y)}
+                      width={Math.max(0, ann.x)}
+                      height={Math.max(0, ann.height)}
                       fill="rgba(0,0,0,0.5)"
                     />
                     <rect
                       x={ann.x + ann.width}
-                      y={ann.y}
-                      width={imgSize.width - ann.x - ann.width}
-                      height={ann.height}
+                      y={Math.max(0, ann.y)}
+                      width={Math.max(0, imgSize.width - ann.x - ann.width)}
+                      height={Math.max(0, ann.height)}
                       fill="rgba(0,0,0,0.5)"
                     />
                     <rect
                       x={0}
                       y={ann.y + ann.height}
                       width={imgSize.width}
-                      height={imgSize.height - ann.y - ann.height}
+                      height={Math.max(0, imgSize.height - ann.y - ann.height)}
                       fill="rgba(0,0,0,0.5)"
                     />
                     <rect
@@ -510,20 +516,32 @@ export function EditorCanvas({
                 const ch = Math.abs(drawing.endY - drawing.startY);
                 return (
                   <g>
-                    <rect x={0} y={0} width={imgSize.width} height={cy} fill="rgba(0,0,0,0.5)" />
-                    <rect x={0} y={cy} width={cx} height={ch} fill="rgba(0,0,0,0.5)" />
+                    <rect
+                      x={0}
+                      y={0}
+                      width={imgSize.width}
+                      height={Math.max(0, cy)}
+                      fill="rgba(0,0,0,0.5)"
+                    />
+                    <rect
+                      x={0}
+                      y={Math.max(0, cy)}
+                      width={Math.max(0, cx)}
+                      height={Math.max(0, ch)}
+                      fill="rgba(0,0,0,0.5)"
+                    />
                     <rect
                       x={cx + cw}
-                      y={cy}
-                      width={imgSize.width - cx - cw}
-                      height={ch}
+                      y={Math.max(0, cy)}
+                      width={Math.max(0, imgSize.width - cx - cw)}
+                      height={Math.max(0, ch)}
                       fill="rgba(0,0,0,0.5)"
                     />
                     <rect
                       x={0}
                       y={cy + ch}
                       width={imgSize.width}
-                      height={imgSize.height - cy - ch}
+                      height={Math.max(0, imgSize.height - cy - ch)}
                       fill="rgba(0,0,0,0.5)"
                     />
                     <rect

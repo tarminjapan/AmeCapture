@@ -129,8 +129,8 @@ impl EditorService for DefaultEditorService {
             rgba = apply_crop(&mut rgba, &crop);
         }
 
-        let offset_x = crop_region.map_or(0.0, |c| c.x);
-        let offset_y = crop_region.map_or(0.0, |c| c.y);
+        let offset_x = crop_region.map_or(0.0, |c| c.x.max(0.0).round());
+        let offset_y = crop_region.map_or(0.0, |c| c.y.max(0.0).round());
 
         for annotation in &edit.annotations {
             match annotation {
@@ -203,8 +203,11 @@ fn apply_crop(rgba: &mut RgbaImage, crop: &CropAnnotation) -> RgbaImage {
 
     let x0 = crop.x.max(0.0).round() as u32;
     let y0 = crop.y.max(0.0).round() as u32;
-    let x1 = (crop.x + crop.width).min(f64::from(img_w)).round() as u32;
-    let y1 = (crop.y + crop.height).min(f64::from(img_h)).round() as u32;
+    let x1 = (crop.x + crop.width).max(0.0).min(f64::from(img_w)).round() as u32;
+    let y1 = (crop.y + crop.height)
+        .max(0.0)
+        .min(f64::from(img_h))
+        .round() as u32;
 
     let crop_w = x1.saturating_sub(x0);
     let crop_h = y1.saturating_sub(y0);
