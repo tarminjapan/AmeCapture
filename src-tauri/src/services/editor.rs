@@ -390,7 +390,7 @@ fn draw_mosaic(rgba: &mut RgbaImage, mosaic: &MosaicAnnotation) {
             let mut g_sum = 0u64;
             let mut b_sum = 0u64;
             let mut a_sum = 0u64;
-            let count = u64::from(bw * bh);
+            let count = u64::from(bw) * u64::from(bh);
 
             for py in by..by + bh {
                 for px in bx..bx + bw {
