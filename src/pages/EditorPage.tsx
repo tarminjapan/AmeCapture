@@ -47,14 +47,16 @@ export default function EditorPage({ onBack }: EditorPageProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
       if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'z' && !e.shiftKey) {
+        const key = e.key.toLowerCase();
+        if (key === 'z' && !e.shiftKey) {
           e.preventDefault();
           undo();
-        } else if (e.key === 'z' && e.shiftKey) {
-          e.preventDefault();
-          redo();
-        } else if (e.key === 'y') {
+        } else if ((key === 'z' && e.shiftKey) || key === 'y') {
           e.preventDefault();
           redo();
         }
