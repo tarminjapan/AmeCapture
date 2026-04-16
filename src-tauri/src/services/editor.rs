@@ -22,6 +22,8 @@ enum Annotation {
     Text(TextAnnotation),
     #[serde(rename = "rectangle")]
     Rectangle(RectangleAnnotation),
+    #[serde(rename = "mosaic")]
+    Mosaic(MosaicAnnotation),
 }
 
 #[derive(Deserialize)]
@@ -54,6 +56,16 @@ struct RectangleAnnotation {
     height: f64,
     stroke_color: String,
     stroke_width: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MosaicAnnotation {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    strength: u32,
 }
 
 struct Triangle {
@@ -103,6 +115,7 @@ impl EditorService for DefaultEditorService {
                     draw_text_annotation(&mut rgba, text, font_data.as_deref())
                 }
                 Annotation::Rectangle(rect) => draw_rectangle(&mut rgba, rect),
+                Annotation::Mosaic(mosaic) => draw_mosaic(&mut rgba, mosaic),
             }
         }
 
@@ -346,6 +359,60 @@ fn fill_triangle(img: &mut RgbaImage, tri: &Triangle, color: Rgba<u8>) {
             for x in xs..=xe {
                 if x >= 0 && y >= 0 && (x as u32) < img_w && (y as u32) < img_h {
                     img.put_pixel(x as u32, y as u32, color);
+                }
+            }
+        }
+    }
+}
+
+fn draw_mosaic(rgba: &mut RgbaImage, mosaic: &MosaicAnnotation) {
+    let img_w = rgba.width();
+    let img_h = rgba.height();
+
+    let x0 = mosaic.x.max(0.0).round() as u32;
+    let y0 = mosaic.y.max(0.0).round() as u32;
+    let x1 = (mosaic.x + mosaic.width).min(f64::from(img_w)).round() as u32;
+    let y1 = (mosaic.y + mosaic.height).min(f64::from(img_h)).round() as u32;
+
+    if x1 <= x0 || y1 <= y0 {
+        return;
+    }
+
+    let block_size = mosaic.strength.max(1);
+
+    for by in (y0..y1).step_by(block_size as usize) {
+        for bx in (x0..x1).step_by(block_size as usize) {
+            let bw = block_size.min(x1 - bx);
+            let bh = block_size.min(y1 - by);
+
+            // Calculate average color
+            let mut r_sum = 0u64;
+            let mut g_sum = 0u64;
+            let mut b_sum = 0u64;
+            let mut a_sum = 0u64;
+            let count = u64::from(bw * bh);
+
+            for py in by..by + bh {
+                for px in bx..bx + bw {
+                    let pixel = rgba.get_pixel(px, py);
+                    r_sum += u64::from(pixel[0]);
+                    g_sum += u64::from(pixel[1]);
+                    b_sum += u64::from(pixel[2]);
+                    a_sum += u64::from(pixel[3]);
+                }
+            }
+
+            let avg_pixel = Rgba([
+                (r_sum / count) as u8,
+                (g_sum / count) as u8,
+                (b_sum / count) as u8,
+                (a_sum / count) as u8,
+            ]);
+
+            // Fill block
+            for py in by..by + bh {
+                for px in bx..bx + bw {
+                    rgba.put_pixel(px, py, avg_pixel);
                 }
             }
         }
