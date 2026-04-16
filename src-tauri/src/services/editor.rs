@@ -20,6 +20,8 @@ enum Annotation {
     Arrow(ArrowAnnotation),
     #[serde(rename = "text")]
     Text(TextAnnotation),
+    #[serde(rename = "rectangle")]
+    Rectangle(RectangleAnnotation),
 }
 
 #[derive(Deserialize)]
@@ -41,6 +43,17 @@ struct TextAnnotation {
     text: String,
     font_size: f64,
     stroke_color: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RectangleAnnotation {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    stroke_color: String,
+    stroke_width: u32,
 }
 
 struct Triangle {
@@ -89,6 +102,7 @@ impl EditorService for DefaultEditorService {
                 Annotation::Text(text) => {
                     draw_text_annotation(&mut rgba, text, font_data.as_deref())
                 }
+                Annotation::Rectangle(rect) => draw_rectangle(&mut rgba, rect),
             }
         }
 
@@ -197,6 +211,20 @@ fn draw_arrow(rgba: &mut RgbaImage, arrow: &ArrowAnnotation) {
     let angle = (arrow.end_y - arrow.start_y).atan2(arrow.end_x - arrow.start_x);
     let head_length = f64::from(width) * 4.0;
     draw_arrowhead(rgba, arrow.end_x, arrow.end_y, angle, head_length, color);
+}
+
+fn draw_rectangle(rgba: &mut RgbaImage, rect: &RectangleAnnotation) {
+    let color = parse_color(&rect.stroke_color);
+    let width = rect.stroke_width.max(1);
+    let x0 = rect.x;
+    let y0 = rect.y;
+    let x1 = rect.x + rect.width;
+    let y1 = rect.y + rect.height;
+
+    draw_thick_line(rgba, x0, y0, x1, y0, color, width);
+    draw_thick_line(rgba, x1, y0, x1, y1, color, width);
+    draw_thick_line(rgba, x1, y1, x0, y1, color, width);
+    draw_thick_line(rgba, x0, y1, x0, y0, color, width);
 }
 
 fn draw_thick_line(

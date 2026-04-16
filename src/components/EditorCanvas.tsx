@@ -146,7 +146,7 @@ export function EditorCanvas({
         setPanStart({ x: e.clientX - panX, y: e.clientY - panY });
         return;
       }
-      if (e.button === 0 && activeTool === 'arrow') {
+      if (e.button === 0 && (activeTool === 'arrow' || activeTool === 'rectangle')) {
         const coords = getImageCoords(e);
         if (coords) {
           setDrawing({
@@ -192,21 +192,36 @@ export function EditorCanvas({
       const dx = drawing.endX - drawing.startX;
       const dy = drawing.endY - drawing.startY;
       if (Math.sqrt(dx * dx + dy * dy) > 5) {
-        onAddAnnotation({
-          id: generateId(),
-          type: 'arrow',
-          startX: drawing.startX,
-          startY: drawing.startY,
-          endX: drawing.endX,
-          endY: drawing.endY,
-          strokeColor,
-          strokeWidth,
-        });
+        if (activeTool === 'arrow') {
+          onAddAnnotation({
+            id: generateId(),
+            type: 'arrow',
+            startX: drawing.startX,
+            startY: drawing.startY,
+            endX: drawing.endX,
+            endY: drawing.endY,
+            strokeColor,
+            strokeWidth,
+          });
+        } else if (activeTool === 'rectangle') {
+          const x = Math.min(drawing.startX, drawing.endX);
+          const y = Math.min(drawing.startY, drawing.endY);
+          onAddAnnotation({
+            id: generateId(),
+            type: 'rectangle',
+            x,
+            y,
+            width: Math.abs(dx),
+            height: Math.abs(dy),
+            strokeColor,
+            strokeWidth,
+          });
+        }
       }
       setDrawing(null);
     }
     setIsPanning(false);
-  }, [drawing, strokeColor, strokeWidth, onAddAnnotation]);
+  }, [drawing, activeTool, strokeColor, strokeWidth, onAddAnnotation]);
 
   const handleTextKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -221,7 +236,7 @@ export function EditorCanvas({
 
   const cursor = isPanning
     ? 'grabbing'
-    : activeTool === 'arrow'
+    : activeTool === 'arrow' || activeTool === 'rectangle'
       ? 'crosshair'
       : activeTool === 'text'
         ? 'text'
@@ -316,9 +331,23 @@ export function EditorCanvas({
                   </text>
                 );
               }
+              if (ann.type === 'rectangle') {
+                return (
+                  <rect
+                    key={ann.id}
+                    x={ann.x}
+                    y={ann.y}
+                    width={ann.width}
+                    height={ann.height}
+                    stroke={ann.strokeColor}
+                    strokeWidth={ann.strokeWidth}
+                    fill="none"
+                  />
+                );
+              }
               return null;
             })}
-            {drawing && (
+            {drawing && activeTool === 'arrow' && (
               <g>
                 <line
                   x1={drawing.startX}
@@ -340,6 +369,17 @@ export function EditorCanvas({
                   fill={strokeColor}
                 />
               </g>
+            )}
+            {drawing && activeTool === 'rectangle' && (
+              <rect
+                x={Math.min(drawing.startX, drawing.endX)}
+                y={Math.min(drawing.startY, drawing.endY)}
+                width={Math.abs(drawing.endX - drawing.startX)}
+                height={Math.abs(drawing.endY - drawing.startY)}
+                stroke={strokeColor}
+                strokeWidth={strokeWidth}
+                fill="none"
+              />
             )}
           </svg>
         )}

@@ -77,7 +77,18 @@ export interface TextAnnotation {
   strokeColor: string;
 }
 
-export type EditorAnnotation = ArrowAnnotation | TextAnnotation;
+export interface RectangleAnnotation {
+  id: string;
+  type: 'rectangle';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  strokeColor: string;
+  strokeWidth: number;
+}
+
+export type EditorAnnotation = ArrowAnnotation | TextAnnotation | RectangleAnnotation;
 
 export interface EditorState {
   activeTool: EditorTool;
