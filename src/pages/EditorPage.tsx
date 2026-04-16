@@ -22,12 +22,14 @@ export default function EditorPage({ onBack }: EditorPageProps) {
   const isDirty = useEditorStore((s) => s.isDirty);
   const strokeColor = useEditorStore((s) => s.strokeColor);
   const strokeWidth = useEditorStore((s) => s.strokeWidth);
+  const fontSize = useEditorStore((s) => s.fontSize);
   const annotations = useEditorStore((s) => s.annotations);
   const setActiveTool = useEditorStore((s) => s.setActiveTool);
   const setZoom = useEditorStore((s) => s.setZoom);
   const setPan = useEditorStore((s) => s.setPan);
   const setStrokeColor = useEditorStore((s) => s.setStrokeColor);
   const setStrokeWidth = useEditorStore((s) => s.setStrokeWidth);
+  const setFontSize = useEditorStore((s) => s.setFontSize);
   const addAnnotation = useEditorStore((s) => s.addAnnotation);
   const resetEditor = useEditorStore((s) => s.resetEditor);
 
@@ -112,6 +114,7 @@ export default function EditorPage({ onBack }: EditorPageProps) {
         isDirty={isDirty}
         strokeColor={strokeColor}
         strokeWidth={strokeWidth}
+        fontSize={fontSize}
         onToolSelect={setActiveTool}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -123,6 +126,7 @@ export default function EditorPage({ onBack }: EditorPageProps) {
         onBack={handleBack}
         onStrokeColorChange={setStrokeColor}
         onStrokeWidthChange={setStrokeWidth}
+        onFontSizeChange={setFontSize}
       />
       <EditorCanvas
         imagePath={editingItem.currentPath}
@@ -132,6 +136,7 @@ export default function EditorPage({ onBack }: EditorPageProps) {
         activeTool={activeTool}
         strokeColor={strokeColor}
         strokeWidth={strokeWidth}
+        fontSize={fontSize}
         annotations={annotations}
         onZoomChange={setZoom}
         onPanChange={setPan}

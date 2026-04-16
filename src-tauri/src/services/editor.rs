@@ -1,7 +1,9 @@
 use std::f64::consts::PI;
 use std::path::Path;
 
+use ab_glyph::{FontRef, PxScale};
 use image::{Rgba, RgbaImage};
+use imageproc::drawing::draw_text_mut;
 use serde::Deserialize;
 
 use crate::error::{AppError, AppResult};
@@ -16,6 +18,8 @@ struct EditData {
 enum Annotation {
     #[serde(rename = "arrow")]
     Arrow(ArrowAnnotation),
+    #[serde(rename = "text")]
+    Text(TextAnnotation),
 }
 
 #[derive(Deserialize)]
@@ -26,6 +30,15 @@ struct ArrowAnnotation {
     end_y: f64,
     stroke_color: String,
     stroke_width: u32,
+}
+
+#[derive(Deserialize)]
+struct TextAnnotation {
+    x: f64,
+    y: f64,
+    text: String,
+    font_size: f64,
+    stroke_color: String,
 }
 
 struct Triangle {
@@ -70,6 +83,7 @@ impl EditorService for DefaultEditorService {
         for annotation in &edit.annotations {
             match annotation {
                 Annotation::Arrow(arrow) => draw_arrow(&mut rgba, arrow),
+                Annotation::Text(text) => draw_text_annotation(&mut rgba, text),
             }
         }
 
@@ -96,6 +110,58 @@ fn parse_color(color: &str) -> Rgba<u8> {
     let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(0);
     let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(0);
     Rgba([r, g, b, 255])
+}
+
+fn draw_text_annotation(rgba: &mut RgbaImage, text_ann: &TextAnnotation) {
+    let font_paths = [
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+        "C:\\Windows\\Fonts\\meiryo.ttc",
+    ];
+
+    let font_data = font_paths
+        .iter()
+        .find_map(|p| std::fs::read(p).ok())
+        .unwrap_or_else(|| {
+            tracing::error!("No suitable font found on system");
+            Vec::new()
+        });
+
+    if font_data.is_empty() {
+        return;
+    }
+
+    let font = match FontRef::try_from_slice(&font_data) {
+        Ok(f) => f,
+        Err(e) => {
+            tracing::error!("Failed to load font: {}", e);
+            return;
+        }
+    };
+
+    let scale = PxScale {
+        x: text_ann.font_size as f32,
+        y: text_ann.font_size as f32,
+    };
+    let color = parse_color(&text_ann.stroke_color);
+
+    let mut draw_img = rgba.clone();
+    let mut y_offset = 0i32;
+
+    for line in text_ann.text.split('\n') {
+        draw_text_mut(
+            &mut draw_img,
+            color,
+            text_ann.x as i32,
+            text_ann.y as i32 + y_offset,
+            scale,
+            &font,
+            line,
+        );
+        y_offset += text_ann.font_size as i32;
+    }
+
+    *rgba = draw_img;
 }
 
 fn draw_arrow(rgba: &mut RgbaImage, arrow: &ArrowAnnotation) {

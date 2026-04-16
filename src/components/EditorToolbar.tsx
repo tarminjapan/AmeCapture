@@ -24,6 +24,7 @@ interface EditorToolbarProps {
   isDirty: boolean;
   strokeColor: string;
   strokeWidth: number;
+  fontSize: number;
   onToolSelect: (tool: EditorTool) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -35,6 +36,7 @@ interface EditorToolbarProps {
   onBack: () => void;
   onStrokeColorChange: (color: string) => void;
   onStrokeWidthChange: (width: number) => void;
+  onFontSizeChange: (size: number) => void;
 }
 
 const tools: { tool: EditorTool; icon: React.ElementType; label: string }[] = [
@@ -52,6 +54,14 @@ const strokeWidths = [
   { value: 5, label: '太' },
 ];
 
+const fontSizes = [
+  { value: 12, label: '12' },
+  { value: 16, label: '16' },
+  { value: 24, label: '24' },
+  { value: 32, label: '32' },
+  { value: 48, label: '48' },
+];
+
 export function EditorToolbar({
   activeTool,
   zoom,
@@ -60,6 +70,7 @@ export function EditorToolbar({
   isDirty,
   strokeColor,
   strokeWidth,
+  fontSize,
   onToolSelect,
   onZoomIn,
   onZoomOut,
@@ -71,8 +82,10 @@ export function EditorToolbar({
   onBack,
   onStrokeColorChange,
   onStrokeWidthChange,
+  onFontSizeChange,
 }: EditorToolbarProps) {
   const isDrawingTool = activeTool === 'arrow' || activeTool === 'rectangle';
+  const isTextTool = activeTool === 'text';
 
   return (
     <div className="flex items-center justify-between border-b border-border px-4 py-2">
@@ -121,6 +134,35 @@ export function EditorToolbar({
                   )}
                   onClick={() => onStrokeWidthChange(value)}
                   title={label}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        {isTextTool && (
+          <>
+            <div className="w-px h-6 bg-border mx-2" />
+            <input
+              type="color"
+              value={strokeColor}
+              onChange={(e) => onStrokeColorChange(e.target.value)}
+              className="w-6 h-6 rounded cursor-pointer border border-border"
+              title="色"
+            />
+            <div className="flex items-center gap-0.5">
+              {fontSizes.map(({ value, label }) => (
+                <button
+                  key={value}
+                  className={cn(
+                    'px-1.5 py-0.5 text-xs rounded transition-colors',
+                    fontSize === value
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent text-muted-foreground',
+                  )}
+                  onClick={() => onFontSizeChange(value)}
+                  title={`${label}px`}
                 >
                   {label}
                 </button>

@@ -67,7 +67,17 @@ export interface ArrowAnnotation {
   strokeWidth: number;
 }
 
-export type EditorAnnotation = ArrowAnnotation;
+export interface TextAnnotation {
+  id: string;
+  type: 'text';
+  x: number;
+  y: number;
+  text: string;
+  fontSize: number;
+  strokeColor: string;
+}
+
+export type EditorAnnotation = ArrowAnnotation | TextAnnotation;
 
 export interface EditorState {
   activeTool: EditorTool;
