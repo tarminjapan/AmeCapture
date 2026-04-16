@@ -5,7 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { EditorToolbar } from '@/components/EditorToolbar';
 import { EditorCanvas } from '@/components/EditorCanvas';
 import { invoke } from '@tauri-apps/api/core';
-import type { CommandResult, EditorAnnotation } from '@/types';
+import type { CommandResult, CropAnnotation, EditorAnnotation } from '@/types';
 
 interface EditorPageProps {
   onBack: () => void;
@@ -31,6 +31,7 @@ export default function EditorPage({ onBack }: EditorPageProps) {
   const setStrokeWidth = useEditorStore((s) => s.setStrokeWidth);
   const setFontSize = useEditorStore((s) => s.setFontSize);
   const addAnnotation = useEditorStore((s) => s.addAnnotation);
+  const replaceCropAnnotation = useEditorStore((s) => s.replaceCropAnnotation);
   const resetEditor = useEditorStore((s) => s.resetEditor);
 
   const { saveEdit, undo, redo } = useEditor();
@@ -88,6 +89,13 @@ export default function EditorPage({ onBack }: EditorPageProps) {
     [addAnnotation],
   );
 
+  const handleCropAnnotation = useCallback(
+    (annotation: CropAnnotation) => {
+      replaceCropAnnotation(annotation);
+    },
+    [replaceCropAnnotation],
+  );
+
   if (!editingItem) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -141,6 +149,7 @@ export default function EditorPage({ onBack }: EditorPageProps) {
         onZoomChange={setZoom}
         onPanChange={setPan}
         onAddAnnotation={handleAddAnnotation}
+        onCropAnnotation={handleCropAnnotation}
         className="flex-1"
       />
     </div>

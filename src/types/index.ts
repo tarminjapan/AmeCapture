@@ -98,11 +98,21 @@ export interface MosaicAnnotation {
   strength: number;
 }
 
+export interface CropAnnotation {
+  id: string;
+  type: 'crop';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export type EditorAnnotation =
   | ArrowAnnotation
   | TextAnnotation
   | RectangleAnnotation
-  | MosaicAnnotation;
+  | MosaicAnnotation
+  | CropAnnotation;
 
 export interface EditorState {
   activeTool: EditorTool;
