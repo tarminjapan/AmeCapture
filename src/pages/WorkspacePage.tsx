@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useTagStore } from '@/stores/tagStore';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -52,76 +52,102 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
 
   const CAPTURE_PROGRESS_DELAY_MS = 50;
 
-  const withCaptureProgress = async (
-    action: () => Promise<void>,
-    options?: { delay?: boolean },
-  ) => {
-    if (isCapturing) return;
-    setIsCapturing(true);
-    try {
-      if (options?.delay) {
-        await new Promise((resolve) => setTimeout(resolve, CAPTURE_PROGRESS_DELAY_MS));
+  const withCaptureProgress = useCallback(
+    async (action: () => Promise<void>, options?: { delay?: boolean }) => {
+      if (isCapturing) return;
+      setIsCapturing(true);
+      try {
+        if (options?.delay) {
+          await new Promise((resolve) => setTimeout(resolve, CAPTURE_PROGRESS_DELAY_MS));
+        }
+        await action();
+      } finally {
+        setIsCapturing(false);
       }
-      await action();
-    } finally {
-      setIsCapturing(false);
-    }
-  };
+    },
+    [isCapturing],
+  );
 
   useEffect(() => {
     loadItems();
   }, [loadItems]);
 
-  const handleCaptureFullscreen = () =>
-    withCaptureProgress(
-      async () => {
-        await captureFullscreen();
-      },
-      { delay: true },
-    );
+  const handleCaptureFullscreen = useCallback(
+    () =>
+      withCaptureProgress(
+        async () => {
+          await captureFullscreen();
+        },
+        { delay: true },
+      ),
+    [withCaptureProgress, captureFullscreen],
+  );
 
-  const handleCaptureRegion = () =>
-    withCaptureProgress(async () => {
-      const result = await prepareRegionCapture();
-      if (result.success && result.data) {
-        setRegionCaptureInfo(result.data);
-      }
-    });
+  const handleCaptureRegion = useCallback(
+    () =>
+      withCaptureProgress(
+        async () => {
+          const result = await prepareRegionCapture();
+          if (result.success && result.data) {
+            setRegionCaptureInfo(result.data);
+          }
+        },
+        { delay: true },
+      ),
+    [withCaptureProgress, prepareRegionCapture],
+  );
 
-  const handleRegionConfirm = (sourcePath: string, region: CaptureRegion) =>
-    withCaptureProgress(
-      async () => {
-        setRegionCaptureInfo(null);
-        await finalizeRegionCapture(sourcePath, region);
-      },
-      { delay: true },
-    );
+  const handleRegionConfirm = useCallback(
+    (sourcePath: string, region: CaptureRegion) => {
+      setRegionCaptureInfo(null);
+      withCaptureProgress(
+        async () => {
+          await finalizeRegionCapture(sourcePath, region);
+        },
+        { delay: true },
+      );
+    },
+    [withCaptureProgress, finalizeRegionCapture],
+  );
 
-  const handleRegionCancel = async (sourcePath: string) => {
-    setRegionCaptureInfo(null);
-    await cancelRegionCapture(sourcePath);
-  };
+  const handleRegionCancel = useCallback(
+    async (sourcePath: string) => {
+      setRegionCaptureInfo(null);
+      await cancelRegionCapture(sourcePath);
+    },
+    [cancelRegionCapture],
+  );
 
-  const handleCaptureWindow = () =>
-    withCaptureProgress(async () => {
-      const result = await prepareWindowCapture();
-      if (result.success && result.data) {
-        setWindowCaptureList(result.data.windows);
-      }
-    });
+  const handleCaptureWindow = useCallback(
+    () =>
+      withCaptureProgress(
+        async () => {
+          const result = await prepareWindowCapture();
+          if (result.success && result.data) {
+            setWindowCaptureList(result.data.windows);
+          }
+        },
+        { delay: true },
+      ),
+    [withCaptureProgress, prepareWindowCapture],
+  );
 
-  const handleWindowSelect = (hwnd: number) =>
-    withCaptureProgress(
-      async () => {
-        setWindowCaptureList(null);
-        await captureWindow(hwnd);
-      },
-      { delay: true },
-    );
+  const handleWindowSelect = useCallback(
+    (hwnd: number) => {
+      setWindowCaptureList(null);
+      withCaptureProgress(
+        async () => {
+          await captureWindow(hwnd);
+        },
+        { delay: true },
+      );
+    },
+    [withCaptureProgress, captureWindow],
+  );
 
-  const handleWindowCancel = () => {
+  const handleWindowCancel = useCallback(() => {
     setWindowCaptureList(null);
-  };
+  }, []);
 
   useGlobalShortcut((action: CaptureAction) => {
     if (regionCaptureInfo || windowCaptureList || isCapturing) return;
