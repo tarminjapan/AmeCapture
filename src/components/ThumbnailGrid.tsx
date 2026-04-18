@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
 import { Star, StarOff, Trash2, ImageIcon, Film } from 'lucide-react';
@@ -17,6 +17,10 @@ interface ThumbnailGridProps {
 
 function ThumbnailImage({ item }: { item: WorkspaceItem }) {
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [item.id, item.thumbnailPath]);
 
   if (imgError || !item.thumbnailPath) {
     return (

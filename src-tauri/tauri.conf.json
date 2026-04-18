@@ -15,7 +15,7 @@
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["$PICTURES/**", "$HOME/**", "$APPDATA/**", "$TEMP/**"]
+          "allow": ["$PICTURES/**", "$APPDATA/**", "$TEMP/**"]
         }
       }
     },

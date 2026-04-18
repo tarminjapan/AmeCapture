@@ -33,6 +33,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     this.setState({ errorInfo });
   }
 
+  private timerId: ReturnType<typeof setTimeout> | null = null;
+
+  componentWillUnmount() {
+    if (this.timerId !== null) {
+      clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+  }
+
   private handleCopy = () => {
     const { error, errorInfo } = this.state;
     const lines: string[] = [
@@ -47,10 +56,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       '【コンポーネントスタック】',
       errorInfo?.componentStack ?? '',
     ];
-    navigator.clipboard.writeText(lines.join('\n')).then(() => {
-      this.setState({ copied: true });
-      setTimeout(() => this.setState({ copied: false }), 2000);
-    });
+    navigator.clipboard.writeText(lines.join('\n')).then(
+      () => {
+        this.setState({ copied: true });
+        this.timerId = setTimeout(() => {
+          this.timerId = null;
+          this.setState({ copied: false });
+        }, 2000);
+      },
+      (err) => {
+        logger.error('Failed to copy error info to clipboard:', err);
+      },
+    );
   };
 
   render() {

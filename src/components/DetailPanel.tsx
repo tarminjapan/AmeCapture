@@ -23,7 +23,7 @@ function DetailThumbnail({ item }: { item: WorkspaceItem }) {
   // item が変更されたらエラー状態をリセット
   useEffect(() => {
     setImgError(false);
-  }, [item.id]);
+  }, [item.id, item.thumbnailPath]);
 
   if (imgError || !item.thumbnailPath) {
     return (
