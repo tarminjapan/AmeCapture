@@ -79,6 +79,14 @@ pub fn run() {
                 tracing::warn!("Failed to create storage directories: {}", e);
             }
 
+            // === Configure Asset Protocol Scope ===
+            let scope = app.asset_protocol_scope();
+            if let Err(e) = scope.allow_directory(&save_path, true) {
+                tracing::warn!("Failed to add save path to asset protocol scope: {}", e);
+            } else {
+                tracing::info!("Asset protocol scope configured for: {:?}", save_path);
+            }
+
             // === Build DI Container ===
             let workspace_repo = SqliteWorkspaceRepository::new(Arc::clone(&conn));
             let settings_repo = SqliteSettingsRepository::new(Arc::clone(&conn));
