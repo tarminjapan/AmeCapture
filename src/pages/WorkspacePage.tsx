@@ -57,24 +57,37 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
   const handleCaptureFullscreen = async () => {
     if (isCapturing) return;
     setIsCapturing(true);
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    await captureFullscreen();
-    setIsCapturing(false);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await captureFullscreen();
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   const handleCaptureRegion = async () => {
-    const result = await prepareRegionCapture();
-    if (result.success && result.data) {
-      setRegionCaptureInfo(result.data);
+    if (isCapturing) return;
+    setIsCapturing(true);
+    try {
+      const result = await prepareRegionCapture();
+      if (result.success && result.data) {
+        setRegionCaptureInfo(result.data);
+      }
+    } finally {
+      setIsCapturing(false);
     }
   };
 
   const handleRegionConfirm = async (sourcePath: string, region: CaptureRegion) => {
+    if (isCapturing) return;
     setRegionCaptureInfo(null);
     setIsCapturing(true);
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    await finalizeRegionCapture(sourcePath, region);
-    setIsCapturing(false);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await finalizeRegionCapture(sourcePath, region);
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   const handleRegionCancel = async (sourcePath: string) => {
@@ -83,18 +96,28 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
   };
 
   const handleCaptureWindow = async () => {
-    const result = await prepareWindowCapture();
-    if (result.success && result.data) {
-      setWindowCaptureList(result.data.windows);
+    if (isCapturing) return;
+    setIsCapturing(true);
+    try {
+      const result = await prepareWindowCapture();
+      if (result.success && result.data) {
+        setWindowCaptureList(result.data.windows);
+      }
+    } finally {
+      setIsCapturing(false);
     }
   };
 
   const handleWindowSelect = async (hwnd: number) => {
+    if (isCapturing) return;
     setWindowCaptureList(null);
     setIsCapturing(true);
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    await captureWindow(hwnd);
-    setIsCapturing(false);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await captureWindow(hwnd);
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   const handleWindowCancel = () => {
