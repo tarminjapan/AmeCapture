@@ -17,6 +17,44 @@ interface DetailPanelProps {
   onOpenEditor: () => void;
 }
 
+function DetailThumbnail({ item }: { item: WorkspaceItem }) {
+  const [imgError, setImgError] = useState(false);
+
+  // item が変更されたらエラー状態をリセット
+  useEffect(() => {
+    setImgError(false);
+  }, [item.id, item.thumbnailPath]);
+
+  if (imgError || !item.thumbnailPath) {
+    return (
+      <div className="aspect-video rounded-md bg-muted flex items-center justify-center">
+        <span className="text-xs text-muted-foreground">プレビューなし</span>
+      </div>
+    );
+  }
+
+  const src = convertFileSrc(item.thumbnailPath);
+
+  return (
+    <div className="aspect-video rounded-md bg-muted overflow-hidden">
+      <img
+        src={src}
+        alt={item.title}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          console.warn(`Detail thumbnail load failed`);
+          console.debug(`  item.id: ${item.id}`);
+          console.debug(`  item.title: ${item.title}`);
+          console.debug(`  thumbnailPath: ${item.thumbnailPath}`);
+          console.debug(`  converted src: ${src}`);
+          console.debug(`  event type: ${e.type}`);
+          setImgError(true);
+        }}
+      />
+    </div>
+  );
+}
+
 export function DetailPanel({
   item,
   onClose,
@@ -102,19 +140,7 @@ export function DetailPanel({
       </div>
 
       {/* Preview */}
-      <div className="aspect-video rounded-md bg-muted overflow-hidden">
-        {item.thumbnailPath ? (
-          <img
-            src={convertFileSrc(item.thumbnailPath)}
-            alt={item.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
-            プレビューなし
-          </div>
-        )}
-      </div>
+      <DetailThumbnail item={item} />
 
       {/* Info */}
       <div className="space-y-2 text-sm">

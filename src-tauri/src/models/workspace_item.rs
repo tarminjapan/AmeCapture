@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// Workspace item entity
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceItem {
     pub id: String,
     #[serde(rename = "type")]
