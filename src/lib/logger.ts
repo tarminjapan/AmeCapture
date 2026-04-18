@@ -12,11 +12,11 @@ export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error';
 const LOG_LEVEL_ORDER: LogLevel[] = ['trace', 'debug', 'info', 'warn', 'error'];
 const STORAGE_KEY = 'amecapture_log_level';
 
-// dev server (npm run tauri dev) → DEBUG, production build → INFO
 const DEFAULT_LEVEL: LogLevel = import.meta.env.DEV ? 'debug' : 'info';
 
-/** Get the current minimum log level (persisted in localStorage) */
-export function getLogLevel(): LogLevel {
+let cachedLevel: LogLevel | null = null;
+
+function loadLevel(): LogLevel {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored && LOG_LEVEL_ORDER.includes(stored as LogLevel)) {
@@ -28,8 +28,17 @@ export function getLogLevel(): LogLevel {
   return DEFAULT_LEVEL;
 }
 
-/** Set the minimum log level (persisted in localStorage) */
+/** Get the current minimum log level (persisted in localStorage, cached in memory) */
+export function getLogLevel(): LogLevel {
+  if (cachedLevel === null) {
+    cachedLevel = loadLevel();
+  }
+  return cachedLevel;
+}
+
+/** Set the minimum log level (persisted in localStorage, cached in memory) */
 export function setLogLevel(level: LogLevel): void {
+  cachedLevel = level;
   try {
     localStorage.setItem(STORAGE_KEY, level);
   } catch {
@@ -46,9 +55,18 @@ function shouldLog(level: LogLevel): boolean {
   return LOG_LEVEL_ORDER.indexOf(level) >= LOG_LEVEL_ORDER.indexOf(current);
 }
 
+let invokeCache: ((cmd: string, args?: Record<string, unknown>) => Promise<unknown>) | null = null;
+
+async function getInvoke() {
+  if (invokeCache !== null) return invokeCache;
+  const { invoke } = await import('@tauri-apps/api/core');
+  invokeCache = invoke;
+  return invoke;
+}
+
 async function sendToBackend(level: LogLevel, args: unknown[]): Promise<void> {
   try {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const invoke = await getInvoke();
     const message = args
       .map((a) => {
         if (a instanceof Error) {
@@ -121,9 +139,10 @@ export const logger = {
  * Called once at app startup.
  */
 export function installGlobalErrorLogging() {
-  window.onerror = (message, source, lineno, colno, error) => {
+  window.addEventListener('error', (event) => {
+    const { message, filename: source, lineno, colno, error } = event;
     logger.error('Unhandled error:', { message, source, lineno, colno, error: error?.toString() });
-  };
+  });
 
   window.addEventListener('unhandledrejection', (event) => {
     logger.error('Unhandled promise rejection:', event.reason);

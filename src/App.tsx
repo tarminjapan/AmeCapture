@@ -1,7 +1,3 @@
-// export default function App() {
-//     return <div>Hello</div>;
-// }
-
 import { useState, useCallback } from 'react';
 import WorkspacePage from '@/pages/WorkspacePage';
 import EditorPage from '@/pages/EditorPage';
