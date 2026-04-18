@@ -50,75 +50,74 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
   const [windowCaptureList, setWindowCaptureList] = useState<WindowInfo[] | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
+  const CAPTURE_PROGRESS_DELAY_MS = 50;
+
+  const withCaptureProgress = async (
+    action: () => Promise<void>,
+    options?: { delay?: boolean },
+  ) => {
+    if (isCapturing) return;
+    setIsCapturing(true);
+    try {
+      if (options?.delay) {
+        await new Promise((resolve) => setTimeout(resolve, CAPTURE_PROGRESS_DELAY_MS));
+      }
+      await action();
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
   useEffect(() => {
     loadItems();
   }, [loadItems]);
 
-  const handleCaptureFullscreen = async () => {
-    if (isCapturing) return;
-    setIsCapturing(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      await captureFullscreen();
-    } finally {
-      setIsCapturing(false);
-    }
-  };
+  const handleCaptureFullscreen = () =>
+    withCaptureProgress(
+      async () => {
+        await captureFullscreen();
+      },
+      { delay: true },
+    );
 
-  const handleCaptureRegion = async () => {
-    if (isCapturing) return;
-    setIsCapturing(true);
-    try {
+  const handleCaptureRegion = () =>
+    withCaptureProgress(async () => {
       const result = await prepareRegionCapture();
       if (result.success && result.data) {
         setRegionCaptureInfo(result.data);
       }
-    } finally {
-      setIsCapturing(false);
-    }
-  };
+    });
 
-  const handleRegionConfirm = async (sourcePath: string, region: CaptureRegion) => {
-    if (isCapturing) return;
-    setRegionCaptureInfo(null);
-    setIsCapturing(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      await finalizeRegionCapture(sourcePath, region);
-    } finally {
-      setIsCapturing(false);
-    }
-  };
+  const handleRegionConfirm = (sourcePath: string, region: CaptureRegion) =>
+    withCaptureProgress(
+      async () => {
+        setRegionCaptureInfo(null);
+        await finalizeRegionCapture(sourcePath, region);
+      },
+      { delay: true },
+    );
 
   const handleRegionCancel = async (sourcePath: string) => {
     setRegionCaptureInfo(null);
     await cancelRegionCapture(sourcePath);
   };
 
-  const handleCaptureWindow = async () => {
-    if (isCapturing) return;
-    setIsCapturing(true);
-    try {
+  const handleCaptureWindow = () =>
+    withCaptureProgress(async () => {
       const result = await prepareWindowCapture();
       if (result.success && result.data) {
         setWindowCaptureList(result.data.windows);
       }
-    } finally {
-      setIsCapturing(false);
-    }
-  };
+    });
 
-  const handleWindowSelect = async (hwnd: number) => {
-    if (isCapturing) return;
-    setWindowCaptureList(null);
-    setIsCapturing(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      await captureWindow(hwnd);
-    } finally {
-      setIsCapturing(false);
-    }
-  };
+  const handleWindowSelect = (hwnd: number) =>
+    withCaptureProgress(
+      async () => {
+        setWindowCaptureList(null);
+        await captureWindow(hwnd);
+      },
+      { delay: true },
+    );
 
   const handleWindowCancel = () => {
     setWindowCaptureList(null);
