@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import type { WorkspaceItem } from '@/types';
 import { Star, StarOff, Trash2, ImageIcon, Film } from 'lucide-react';
@@ -12,6 +13,39 @@ interface ThumbnailGridProps {
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onDelete: (id: string) => void;
   onOpenEditor: () => void;
+}
+
+function ThumbnailImage({ item }: { item: WorkspaceItem }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (imgError || !item.thumbnailPath) {
+    return (
+      <div className="flex flex-col items-center gap-1 text-muted-foreground">
+        {item.type === 'video' ? <Film className="w-8 h-8" /> : <ImageIcon className="w-8 h-8" />}
+        <span className="text-xs">No preview</span>
+      </div>
+    );
+  }
+
+  const src = convertFileSrc(item.thumbnailPath);
+
+  return (
+    <img
+      src={src}
+      alt={item.title}
+      className="w-full h-full object-cover"
+      loading="lazy"
+      onError={(e) => {
+        console.warn(`Thumbnail load failed`);
+        console.debug(`  item.id: ${item.id}`);
+        console.debug(`  item.title: ${item.title}`);
+        console.debug(`  thumbnailPath: ${item.thumbnailPath}`);
+        console.debug(`  converted src: ${src}`);
+        console.debug(`  event type: ${e.type}`);
+        setImgError(true);
+      }}
+    />
+  );
 }
 
 export function ThumbnailGrid({
@@ -58,23 +92,7 @@ export function ThumbnailGrid({
         >
           {/* Thumbnail */}
           <div className="aspect-video bg-muted flex items-center justify-center relative">
-            {item.thumbnailPath ? (
-              <img
-                src={convertFileSrc(item.thumbnailPath)}
-                alt={item.title}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                {item.type === 'video' ? (
-                  <Film className="w-8 h-8" />
-                ) : (
-                  <ImageIcon className="w-8 h-8" />
-                )}
-                <span className="text-xs">No preview</span>
-              </div>
-            )}
+            <ThumbnailImage item={item} />
 
             {/* Type badge */}
             <span

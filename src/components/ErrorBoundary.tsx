@@ -9,12 +9,13 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  copied: boolean;
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, copied: false };
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
@@ -22,7 +23,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // コンソール＆ログファイルに詳細なエラー情報を出力
     logger.error('=== ErrorBoundary: React rendering error caught ===');
     logger.error('Error:', error);
     logger.error('Error message:', error.message);
@@ -32,6 +32,26 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     this.setState({ errorInfo });
   }
+
+  private handleCopy = () => {
+    const { error, errorInfo } = this.state;
+    const lines: string[] = [
+      '⚠️ アプリケーションエラーが発生しました',
+      '',
+      '【エラーメッセージ】',
+      error?.toString() ?? '',
+      '',
+      '【エラースタックトレース】',
+      error?.stack ?? '',
+      '',
+      '【コンポーネントスタック】',
+      errorInfo?.componentStack ?? '',
+    ];
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      this.setState({ copied: true });
+      setTimeout(() => this.setState({ copied: false }), 2000);
+    });
+  };
 
   render() {
     if (this.state.hasError) {
@@ -55,6 +75,23 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <h2 style={{ color: '#dc2626', marginTop: 0 }}>
             ⚠️ アプリケーションエラーが発生しました
           </h2>
+
+          <button
+            type="button"
+            onClick={this.handleCopy}
+            style={{
+              marginBottom: '16px',
+              padding: '6px 16px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              backgroundColor: this.state.copied ? '#d1fae5' : '#fff',
+              color: this.state.copied ? '#065f46' : '#374151',
+            }}
+          >
+            {this.state.copied ? '✅ コピーしました' : '📋 エラー情報をコピー'}
+          </button>
 
           <details open style={{ marginBottom: '16px' }}>
             <summary style={{ cursor: 'pointer', fontWeight: 'bold', marginBottom: '8px' }}>

@@ -11,6 +11,14 @@
   },
   "app": {
     "withGlobalTauri": false,
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": ["$PICTURES/**", "$HOME/**", "$APPDATA/**", "$TEMP/**"]
+        }
+      }
+    },
     "windows": [
       {
         "title": "AmeCapture",
