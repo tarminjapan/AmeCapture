@@ -1,12 +1,16 @@
+import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { WorkspaceItem, Tag, CommandResult } from '@/types';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useTagStore } from '@/stores/tagStore';
 
 export function useWorkspace() {
-  const { setItems, removeItem, updateItem, setLoading } = useWorkspaceStore();
+  const setItems = useWorkspaceStore((s) => s.setItems);
+  const removeItem = useWorkspaceStore((s) => s.removeItem);
+  const updateItem = useWorkspaceStore((s) => s.updateItem);
+  const setLoading = useWorkspaceStore((s) => s.setLoading);
 
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
     setLoading(true);
     try {
       const result = await invoke<CommandResult<WorkspaceItem[]>>('get_workspace_items');
@@ -33,53 +37,62 @@ export function useWorkspace() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setItems, setLoading]);
 
-  const deleteItem = async (id: string) => {
-    try {
-      const result = await invoke<CommandResult<null>>('delete_workspace_item', {
-        id,
-      });
-      if (result.success) {
-        removeItem(id);
-      }
-    } catch (error) {
-      console.error('Failed to delete item:', error);
-    }
-  };
-
-  const renameItem = async (id: string, title: string) => {
-    try {
-      const result = await invoke<CommandResult<WorkspaceItem>>('rename_workspace_item', {
-        id,
-        title,
-      });
-      if (result.success && result.data) {
-        updateItem(id, {
-          title: result.data.title,
-          currentPath: result.data.currentPath,
-          originalPath: result.data.originalPath,
-          thumbnailPath: result.data.thumbnailPath,
-          updatedAt: result.data.updatedAt,
+  const deleteItem = useCallback(
+    async (id: string) => {
+      try {
+        const result = await invoke<CommandResult<null>>('delete_workspace_item', {
+          id,
         });
+        if (result.success) {
+          removeItem(id);
+        }
+      } catch (error) {
+        console.error('Failed to delete item:', error);
       }
-    } catch (error) {
-      console.error('Failed to rename item:', error);
-    }
-  };
+    },
+    [removeItem],
+  );
 
-  const toggleFavorite = async (id: string, isFavorite: boolean) => {
-    try {
-      const result = await invoke<CommandResult<null>>('toggle_favorite', { id, isFavorite });
-      if (result.success) {
-        updateItem(id, { isFavorite });
+  const renameItem = useCallback(
+    async (id: string, title: string) => {
+      try {
+        const result = await invoke<CommandResult<WorkspaceItem>>('rename_workspace_item', {
+          id,
+          title,
+        });
+        if (result.success && result.data) {
+          updateItem(id, {
+            title: result.data.title,
+            currentPath: result.data.currentPath,
+            originalPath: result.data.originalPath,
+            thumbnailPath: result.data.thumbnailPath,
+            updatedAt: result.data.updatedAt,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to rename item:', error);
       }
-    } catch (error) {
-      console.error('Failed to toggle favorite:', error);
-    }
-  };
+    },
+    [updateItem],
+  );
 
-  const showInFolder = async (id: string) => {
+  const toggleFavorite = useCallback(
+    async (id: string, isFavorite: boolean) => {
+      try {
+        const result = await invoke<CommandResult<null>>('toggle_favorite', { id, isFavorite });
+        if (result.success) {
+          updateItem(id, { isFavorite });
+        }
+      } catch (error) {
+        console.error('Failed to toggle favorite:', error);
+      }
+    },
+    [updateItem],
+  );
+
+  const showInFolder = useCallback(async (id: string) => {
     try {
       const result = await invoke<CommandResult<null>>('show_item_in_folder', { id });
       if (!result.success) {
@@ -88,9 +101,9 @@ export function useWorkspace() {
     } catch (error) {
       console.error('Failed to show item in folder:', error);
     }
-  };
+  }, []);
 
-  const copyImageToClipboard = async (id: string) => {
+  const copyImageToClipboard = useCallback(async (id: string) => {
     try {
       const result = await invoke<CommandResult<null>>('copy_image_to_clipboard', { id });
       if (!result.success) {
@@ -99,7 +112,7 @@ export function useWorkspace() {
     } catch (error) {
       console.error('Failed to copy image to clipboard:', error);
     }
-  };
+  }, []);
 
   return {
     loadItems,
