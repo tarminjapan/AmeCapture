@@ -10,6 +10,7 @@ import { Toolbar } from '@/components/Toolbar';
 import { TagFilterBar } from '@/components/TagFilterBar';
 import { RegionCaptureOverlay } from '@/components/RegionCaptureOverlay';
 import { WindowCaptureOverlay } from '@/components/WindowCaptureOverlay';
+import { CaptureProgressOverlay } from '@/components/CaptureProgressOverlay';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import type { CaptureAction } from '@/hooks/useGlobalShortcut';
 import { useTrayCapture } from '@/hooks/useTrayCapture';
@@ -47,13 +48,18 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
   const [showDetail, setShowDetail] = useState(false);
   const [regionCaptureInfo, setRegionCaptureInfo] = useState<RegionCaptureInfo | null>(null);
   const [windowCaptureList, setWindowCaptureList] = useState<WindowInfo[] | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
 
   useEffect(() => {
     loadItems();
   }, [loadItems]);
 
   const handleCaptureFullscreen = async () => {
+    if (isCapturing) return;
+    setIsCapturing(true);
+    await new Promise((resolve) => setTimeout(resolve, 50));
     await captureFullscreen();
+    setIsCapturing(false);
   };
 
   const handleCaptureRegion = async () => {
@@ -65,7 +71,10 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
 
   const handleRegionConfirm = async (sourcePath: string, region: CaptureRegion) => {
     setRegionCaptureInfo(null);
+    setIsCapturing(true);
+    await new Promise((resolve) => setTimeout(resolve, 50));
     await finalizeRegionCapture(sourcePath, region);
+    setIsCapturing(false);
   };
 
   const handleRegionCancel = async (sourcePath: string) => {
@@ -82,7 +91,10 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
 
   const handleWindowSelect = async (hwnd: number) => {
     setWindowCaptureList(null);
+    setIsCapturing(true);
+    await new Promise((resolve) => setTimeout(resolve, 50));
     await captureWindow(hwnd);
+    setIsCapturing(false);
   };
 
   const handleWindowCancel = () => {
@@ -90,7 +102,7 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
   };
 
   useGlobalShortcut((action: CaptureAction) => {
-    if (regionCaptureInfo || windowCaptureList) return;
+    if (regionCaptureInfo || windowCaptureList || isCapturing) return;
     switch (action) {
       case 'fullscreen':
         handleCaptureFullscreen();
@@ -105,7 +117,7 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
   });
 
   useTrayCapture((action: CaptureAction) => {
-    if (regionCaptureInfo || windowCaptureList) return;
+    if (regionCaptureInfo || windowCaptureList || isCapturing) return;
     switch (action) {
       case 'fullscreen':
         handleCaptureFullscreen();
@@ -192,6 +204,7 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
 
   return (
     <div className="flex h-full w-full flex-col">
+      {isCapturing && <CaptureProgressOverlay />}
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <Toolbar
