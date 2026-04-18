@@ -44,3 +44,5 @@ src-tauri/Cargo.lock
 
 # simple-git-hooks
 .simple-git-hooks*
+
+Note.md
