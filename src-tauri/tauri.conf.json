@@ -23,7 +23,7 @@
       {
         "title": "AmeCapture",
         "width": 1100,
-        "height": 750,
+        "height": 700,
         "resizable": true,
         "fullscreen": false,
         "minWidth": 800,
