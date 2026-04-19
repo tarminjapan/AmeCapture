@@ -30,6 +30,18 @@ fn copy_path_to_clipboard(app: &tauri::AppHandle, image_path: &Path) {
     }
 }
 
+fn enter_overlay_mode(window: &tauri::WebviewWindow) {
+    let _ = window.set_decorations(false);
+    let _ = window.set_always_on_top(true);
+    let _ = window.set_fullscreen(true);
+}
+
+fn exit_overlay_mode(window: &tauri::WebviewWindow) {
+    let _ = window.set_fullscreen(false);
+    let _ = window.set_decorations(true);
+    let _ = window.set_always_on_top(false);
+}
+
 fn validate_temp_path(source_path: &str) -> Result<(), String> {
     let path = Path::new(source_path);
 
@@ -290,6 +302,8 @@ pub fn prepare_region_capture(
         }
     };
 
+    enter_overlay_mode(&window);
+
     if let Err(e) = window.unminimize() {
         tracing::warn!("Failed to unminimize window: {}", e);
     }
@@ -301,6 +315,7 @@ pub fn prepare_region_capture(
         Ok(b) => b,
         Err(e) => {
             let _ = std::fs::remove_file(&temp_path);
+            exit_overlay_mode(&window);
             return CommandResult::err(format!("Failed to read temp image: {e}"));
         }
     };
@@ -448,23 +463,41 @@ pub fn finalize_region_capture(
             tracing::info!("Region capture saved: {} ({}x{})", item.id, w, h);
             copy_image_to_clipboard(&app, cropped);
             let _ = std::fs::remove_file(&source_path);
+
+            if let Some(main_window) = app.get_webview_window("main") {
+                exit_overlay_mode(&main_window);
+            }
+
             CommandResult::ok(item)
         }
         Err(e) => {
             let _ = std::fs::remove_file(&source_path);
+
+            if let Some(main_window) = app.get_webview_window("main") {
+                exit_overlay_mode(&main_window);
+            }
+
             CommandResult::err(e.to_string())
         }
     }
 }
 
 #[tauri::command]
-pub fn cancel_region_capture(source_path: String) -> CommandResult<()> {
+pub fn cancel_region_capture(app: tauri::AppHandle, source_path: String) -> CommandResult<()> {
     tracing::info!("Cancelling region capture");
     if let Err(e) = validate_temp_path(&source_path) {
         tracing::warn!("Invalid source path in cancel_region_capture: {}", e);
+        if let Some(main_window) = app.get_webview_window("main") {
+            exit_overlay_mode(&main_window);
+        }
         return CommandResult::success();
     }
     let _ = std::fs::remove_file(&source_path);
+
+    if let Some(main_window) = app.get_webview_window("main") {
+        exit_overlay_mode(&main_window);
+    }
+
     CommandResult::success()
 }
 
