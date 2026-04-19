@@ -29,11 +29,13 @@ jobs:
       - name: Send rich embed message to Discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_REPO: ${{ github.repository }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY_TRUNCATED: ${{ steps.truncate.outputs.body_truncated || '（本文なし）' }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_AVATAR: ${{ github.event.pull_request.user.avatar_url }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_ADDITIONS: ${{ github.event.pull_request.additions }}
           PR_DELETIONS: ${{ github.event.pull_request.deletions }}
@@ -47,11 +49,13 @@ jobs:
             MERGEABLE_DISPLAY="計算中"
           fi
           payload=$(jq -n \
+            --arg repo "$PR_REPO" \
             --arg title "$PR_TITLE" \
             --arg body "$PR_BODY_TRUNCATED" \
             --arg url "$PR_URL" \
             --arg author "$PR_AUTHOR" \
             --arg avatar "$PR_AVATAR" \
+            --arg head "$PR_HEAD_REF" \
             --arg base "$PR_BASE_REF" \
             --arg changes "追加: ${PR_ADDITIONS} 行 / 削除: ${PR_DELETIONS} 行" \
             --arg labels "$PR_LABELS" \
@@ -66,10 +70,11 @@ jobs:
                 author: {name: $author, icon_url: $avatar},
                 thumbnail: {url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"},
                 fields: [
+                  {name: "リポジトリ", value: $repo},
                   {name: "タイトル", value: $title},
                   {name: "本文（短縮表示）", value: $body},
                   {name: "URL", value: $url},
-                  {name: "ベースブランチ", value: $base, inline: true},
+                  {name: "ブランチ", value: ($head + " -> " + $base), inline: true},
                   {name: "変更行数", value: $changes, inline: true},
                   {name: "ラベル", value: $labels},
                   {name: "Draft", value: $draft, inline: true},
