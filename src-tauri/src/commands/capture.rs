@@ -458,28 +458,22 @@ pub fn finalize_region_capture(
         metadata_json: None,
     };
 
-    match state.workspace_service.add_item(&item) {
+    let result = match state.workspace_service.add_item(&item) {
         Ok(()) => {
             tracing::info!("Region capture saved: {} ({}x{})", item.id, w, h);
             copy_image_to_clipboard(&app, cropped);
-            let _ = std::fs::remove_file(&source_path);
-
-            if let Some(main_window) = app.get_webview_window("main") {
-                exit_overlay_mode(&main_window);
-            }
-
             CommandResult::ok(item)
         }
-        Err(e) => {
-            let _ = std::fs::remove_file(&source_path);
+        Err(e) => CommandResult::err(e.to_string()),
+    };
 
-            if let Some(main_window) = app.get_webview_window("main") {
-                exit_overlay_mode(&main_window);
-            }
+    let _ = std::fs::remove_file(&source_path);
 
-            CommandResult::err(e.to_string())
-        }
+    if let Some(main_window) = app.get_webview_window("main") {
+        exit_overlay_mode(&main_window);
     }
+
+    result
 }
 
 #[tauri::command]
@@ -487,12 +481,9 @@ pub fn cancel_region_capture(app: tauri::AppHandle, source_path: String) -> Comm
     tracing::info!("Cancelling region capture");
     if let Err(e) = validate_temp_path(&source_path) {
         tracing::warn!("Invalid source path in cancel_region_capture: {}", e);
-        if let Some(main_window) = app.get_webview_window("main") {
-            exit_overlay_mode(&main_window);
-        }
-        return CommandResult::success();
+    } else {
+        let _ = std::fs::remove_file(&source_path);
     }
-    let _ = std::fs::remove_file(&source_path);
 
     if let Some(main_window) = app.get_webview_window("main") {
         exit_overlay_mode(&main_window);
