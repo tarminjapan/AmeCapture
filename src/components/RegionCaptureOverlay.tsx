@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CaptureRegion, RegionCaptureInfo } from '@/types';
 
 interface RegionCaptureOverlayProps {
@@ -104,7 +104,7 @@ export function RegionCaptureOverlay({
     [mapClientToScreen],
   );
 
-  const getSelection = useCallback((): SelectionRect | null => {
+  const selection = useMemo((): SelectionRect | null => {
     if (!startPoint || !currentPoint) return null;
     const left = Math.min(startPoint.x, currentPoint.x);
     const top = Math.min(startPoint.y, currentPoint.y);
@@ -113,8 +113,6 @@ export function RegionCaptureOverlay({
     if (width < 3 || height < 3) return null;
     return { left, top, width, height };
   }, [startPoint, currentPoint]);
-
-  const selection = getSelection();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -157,12 +155,6 @@ export function RegionCaptureOverlay({
   const handleMouseUp = () => {
     if (!isSelecting) return;
     setIsSelecting(false);
-    if (selection) {
-      const region = mapSelectionToScreen(selection);
-      if (region.width > 0 && region.height > 0) {
-        onConfirm(captureInfo.tempPath, region);
-      }
-    }
   };
 
   const screenDim = selection
