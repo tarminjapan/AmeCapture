@@ -11,6 +11,7 @@ pub struct CaptureRegion {
 
 /// Window information for capture
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WindowInfo {
     pub hwnd: isize,
     pub title: String,
@@ -28,6 +29,7 @@ pub struct CaptureResult {
 
 /// Info returned after preparing a region capture
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RegionCaptureInfo {
     pub temp_path: String,
     pub screen_width: u32,
