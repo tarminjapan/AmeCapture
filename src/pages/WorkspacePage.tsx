@@ -99,10 +99,10 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
 
   const handleRegionConfirm = useCallback(
     (sourcePath: string, region: CaptureRegion) => {
-      setRegionCaptureInfo(null);
       withCaptureProgress(
         async () => {
           await finalizeRegionCapture(sourcePath, region);
+          setRegionCaptureInfo(null);
         },
         { delay: true },
       );
@@ -111,11 +111,16 @@ export default function WorkspacePage({ onNavigateToEditor }: WorkspacePageProps
   );
 
   const handleRegionCancel = useCallback(
-    async (sourcePath: string) => {
-      setRegionCaptureInfo(null);
-      await cancelRegionCapture(sourcePath);
+    (sourcePath: string) => {
+      withCaptureProgress(
+        async () => {
+          await cancelRegionCapture(sourcePath);
+          setRegionCaptureInfo(null);
+        },
+        { delay: true },
+      );
     },
-    [cancelRegionCapture],
+    [withCaptureProgress, cancelRegionCapture],
   );
 
   const handleCaptureWindow = useCallback(
