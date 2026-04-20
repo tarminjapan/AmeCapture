@@ -1,8 +1,9 @@
+using AmeCapture.Application.Interfaces;
 using AmeCapture.Domain.Entities;
 
 namespace AmeCapture.Infrastructure.Repositories;
 
-public class WorkspaceRepository : AmeCapture.Application.Interfaces.IWorkspaceRepository
+public class WorkspaceRepository : IWorkspaceRepository
 {
     public Task<IReadOnlyList<WorkspaceItem>> GetAllAsync()
     {
