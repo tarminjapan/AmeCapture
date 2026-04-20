@@ -29,6 +29,18 @@ public static class MauiProgram
 
         Log.Information("AmeCapture starting up");
 
+        AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+        {
+            Log.Fatal(e.ExceptionObject as Exception, "Unhandled AppDomain exception");
+            Log.CloseAndFlush();
+        };
+
+        TaskScheduler.UnobservedTaskException += (sender, e) =>
+        {
+            Log.Error(e.Exception, "Unobserved task exception");
+            e.SetObserved();
+        };
+
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
@@ -48,18 +60,6 @@ public static class MauiProgram
 #endif
 
         var app = builder.Build();
-
-        AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
-        {
-            Log.Fatal(e.ExceptionObject as Exception, "Unhandled AppDomain exception");
-            Log.CloseAndFlush();
-        };
-
-        TaskScheduler.UnobservedTaskException += (sender, e) =>
-        {
-            Log.Error(e.Exception, "Unobserved task exception");
-            e.SetObserved();
-        };
 
         return app;
     }
