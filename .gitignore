@@ -9,6 +9,12 @@ tsconfig.tsbuildinfo
 # Rust / Cargo
 src-tauri/target/
 
+# .NET
+src-dotnet/**/bin/
+src-dotnet/**/obj/
+*.user
+*.suo
+
 # Environment
 .env
 .env.local
