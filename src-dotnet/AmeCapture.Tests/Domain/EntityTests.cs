@@ -1,6 +1,6 @@
 using AmeCapture.Domain.Entities;
 
-namespace AmeCapture.Tests;
+namespace AmeCapture.Tests.Domain;
 
 public class WorkspaceItemTests
 {
@@ -15,6 +15,8 @@ public class WorkspaceItemTests
         Assert.Equal(string.Empty, item.CurrentPath);
         Assert.Null(item.ThumbnailPath);
         Assert.Equal(string.Empty, item.Title);
+        Assert.Equal(string.Empty, item.CreatedAt);
+        Assert.Equal(string.Empty, item.UpdatedAt);
         Assert.False(item.IsFavorite);
         Assert.Null(item.MetadataJson);
     }
@@ -35,8 +37,9 @@ public class WorkspaceItemTests
 
         Assert.Equal(string.Empty, settings.SavePath);
         Assert.Equal("png", settings.ImageFormat);
-        Assert.Equal("Ctrl+Shift+S", settings.HotkeyCapture);
-        Assert.Equal("Ctrl+Shift+F", settings.HotkeyRegionCapture);
-        Assert.Equal("Ctrl+Shift+W", settings.HotkeyWindowCapture);
+        Assert.False(settings.StartMinimized);
+        Assert.Equal("Ctrl+Shift+S", settings.HotkeyCaptureRegion);
+        Assert.Equal("Ctrl+Shift+F", settings.HotkeyCaptureFullscreen);
+        Assert.Equal("Ctrl+Shift+W", settings.HotkeyCaptureWindow);
     }
 }
