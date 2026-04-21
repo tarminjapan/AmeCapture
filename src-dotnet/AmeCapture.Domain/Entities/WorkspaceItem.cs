@@ -14,8 +14,8 @@ public class WorkspaceItem
     public string CurrentPath { get; set; } = string.Empty;
     public string? ThumbnailPath { get; set; }
     public string Title { get; set; } = string.Empty;
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public string CreatedAt { get; set; } = string.Empty;
+    public string UpdatedAt { get; set; } = string.Empty;
     public bool IsFavorite { get; set; }
     public string? MetadataJson { get; set; }
 }
