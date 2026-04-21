@@ -143,15 +143,21 @@ public class TagRepository : ITagRepository
                 await deleteCommand.ExecuteNonQueryAsync();
             }
 
-            foreach (var tagId in tagIds)
+            using (var insertCommand = connection.CreateCommand())
             {
-                using var insertCommand = connection.CreateCommand();
                 insertCommand.Transaction = transaction;
                 insertCommand.CommandText = @"
                     INSERT OR IGNORE INTO workspace_item_tags (workspace_item_id, tag_id) VALUES (@itemId, @tagId)";
                 AddParameter(insertCommand, "@itemId", itemId);
-                AddParameter(insertCommand, "@tagId", tagId);
-                await insertCommand.ExecuteNonQueryAsync();
+                var tagParam = insertCommand.CreateParameter();
+                tagParam.ParameterName = "@tagId";
+                insertCommand.Parameters.Add(tagParam);
+
+                foreach (var tagId in tagIds)
+                {
+                    tagParam.Value = tagId;
+                    await insertCommand.ExecuteNonQueryAsync();
+                }
             }
 
             await transaction.CommitAsync();
@@ -190,36 +196,43 @@ public class TagRepository : ITagRepository
             return new Dictionary<string, IReadOnlyList<Tag>>();
         }
 
-        using var connection = await _connectionFactory.CreateConnectionAsync();
-        using var command = connection.CreateCommand();
-
-        var placeholders = new List<string>();
-        for (var i = 0; i < idList.Count; i++)
-        {
-            var paramName = $"@id{i}";
-            placeholders.Add(paramName);
-            AddParameter(command, paramName, idList[i]);
-        }
-
-        command.CommandText = $@"
-            SELECT wit.workspace_item_id, t.id, t.name
-            FROM workspace_item_tags wit
-            INNER JOIN tags t ON t.id = wit.tag_id
-            WHERE wit.workspace_item_id IN ({string.Join(", ", placeholders)})
-            ORDER BY t.name";
-
         var map = new Dictionary<string, IReadOnlyList<Tag>>();
         foreach (var id in idList)
         {
             map[id] = new List<Tag>();
         }
 
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
+        const int chunkSize = 500;
+
+        for (var chunkStart = 0; chunkStart < idList.Count; chunkStart += chunkSize)
         {
-            var itemId = reader.GetString(0);
-            var tag = new Tag { Id = reader.GetString(1), Name = reader.GetString(2) };
-            ((List<Tag>)map[itemId]).Add(tag);
+            var chunk = idList.Skip(chunkStart).Take(chunkSize).ToList();
+
+            using var connection = await _connectionFactory.CreateConnectionAsync();
+            using var command = connection.CreateCommand();
+
+            var placeholders = new List<string>();
+            for (var i = 0; i < chunk.Count; i++)
+            {
+                var paramName = $"@id{i}";
+                placeholders.Add(paramName);
+                AddParameter(command, paramName, chunk[i]);
+            }
+
+            command.CommandText = $@"
+            SELECT wit.workspace_item_id, t.id, t.name
+            FROM workspace_item_tags wit
+            INNER JOIN tags t ON t.id = wit.tag_id
+            WHERE wit.workspace_item_id IN ({string.Join(", ", placeholders)})
+            ORDER BY t.name";
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var itemId = reader.GetString(0);
+                var tag = new Tag { Id = reader.GetString(1), Name = reader.GetString(2) };
+                ((List<Tag>)map[itemId]).Add(tag);
+            }
         }
 
         return map;

@@ -119,30 +119,37 @@ public class WorkspaceRepository : IWorkspaceRepository
             return Array.Empty<WorkspaceItem>();
         }
 
-        using var connection = await _connectionFactory.CreateConnectionAsync();
-        using var command = connection.CreateCommand();
+        var allItems = new List<WorkspaceItem>();
+        const int chunkSize = 500;
 
-        var placeholders = new List<string>();
-        for (var i = 0; i < idList.Count; i++)
+        for (var chunkStart = 0; chunkStart < idList.Count; chunkStart += chunkSize)
         {
-            var paramName = $"@id{i}";
-            placeholders.Add(paramName);
-            AddParameter(command, paramName, idList[i]);
-        }
+            var chunk = idList.Skip(chunkStart).Take(chunkSize).ToList();
 
-        command.CommandText = $@"
+            using var connection = await _connectionFactory.CreateConnectionAsync();
+            using var command = connection.CreateCommand();
+
+            var placeholders = new List<string>();
+            for (var i = 0; i < chunk.Count; i++)
+            {
+                var paramName = $"@id{i}";
+                placeholders.Add(paramName);
+                AddParameter(command, paramName, chunk[i]);
+            }
+
+            command.CommandText = $@"
             SELECT id, type, original_path, current_path, thumbnail_path,
                    title, created_at, updated_at, is_favorite, metadata_json
             FROM workspace_items WHERE id IN ({string.Join(", ", placeholders)})";
 
-        var items = new List<WorkspaceItem>();
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            items.Add(ReadWorkspaceItem(reader));
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                allItems.Add(ReadWorkspaceItem(reader));
+            }
         }
 
-        return items.AsReadOnly();
+        return allItems.AsReadOnly();
     }
 
     private static WorkspaceItem ReadWorkspaceItem(DbDataReader reader)

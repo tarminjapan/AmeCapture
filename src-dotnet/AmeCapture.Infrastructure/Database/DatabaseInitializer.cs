@@ -7,7 +7,9 @@ public static class DatabaseInitializer
     public static async Task InitializeAsync(IDbConnectionFactory connectionFactory)
     {
         using var connection = await connectionFactory.CreateConnectionAsync();
+        using var transaction = await connection.BeginTransactionAsync();
         using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = @"
             CREATE TABLE IF NOT EXISTS workspace_items (
                 id TEXT PRIMARY KEY,
@@ -45,5 +47,6 @@ public static class DatabaseInitializer
             CREATE INDEX IF NOT EXISTS idx_workspace_items_is_favorite
                 ON workspace_items(is_favorite);";
         await command.ExecuteNonQueryAsync();
+        await transaction.CommitAsync();
     }
 }
