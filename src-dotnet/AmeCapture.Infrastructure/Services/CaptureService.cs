@@ -177,44 +177,52 @@ file static class NativeMethods
 
 file sealed class SafeScreenDc : SafeHandle
 {
-    private readonly IntPtr _dc;
-
-    public SafeScreenDc(IntPtr dc) : base(IntPtr.Zero, true) => _dc = dc;
-    public override bool IsInvalid => _dc == IntPtr.Zero;
-    public static implicit operator IntPtr(SafeScreenDc s) => s._dc;
-    protected override bool ReleaseHandle() => NativeMethods.ReleaseDC(IntPtr.Zero, _dc) != 0;
+    public SafeScreenDc(IntPtr dc) : base(IntPtr.Zero, true) => SetHandle(dc);
+    public override bool IsInvalid => handle == IntPtr.Zero;
+    public static implicit operator IntPtr(SafeScreenDc s) => s.handle;
+    protected override bool ReleaseHandle() => NativeMethods.ReleaseDC(IntPtr.Zero, handle) != 0;
 }
 
 file sealed class SafeWindowDc : SafeHandle
 {
     private readonly nint _hwnd;
-    private readonly IntPtr _dc;
-
-    public SafeWindowDc(nint hwnd, IntPtr dc) : base(IntPtr.Zero, true) { _hwnd = hwnd; _dc = dc; }
-    public override bool IsInvalid => _dc == IntPtr.Zero;
-    public static implicit operator IntPtr(SafeWindowDc s) => s._dc;
-    protected override bool ReleaseHandle() => NativeMethods.ReleaseDC(_hwnd, _dc) != 0;
+    public SafeWindowDc(nint hwnd, IntPtr dc) : base(IntPtr.Zero, true) { _hwnd = hwnd; SetHandle(dc); }
+    public override bool IsInvalid => handle == IntPtr.Zero;
+    public static implicit operator IntPtr(SafeWindowDc s) => s.handle;
+    protected override bool ReleaseHandle() => NativeMethods.ReleaseDC(_hwnd, handle) != 0;
 }
 
-file sealed class SafeCompatibleDc(IntPtr sourceDc) : SafeHandle(IntPtr.Zero, true)
+file sealed class SafeCompatibleDc : SafeHandle
 {
-    private readonly IntPtr _dc = NativeMethods.CreateCompatibleDC(sourceDc);
-    public override bool IsInvalid => _dc == IntPtr.Zero;
-    public static implicit operator IntPtr(SafeCompatibleDc s) => s._dc;
-    protected override bool ReleaseHandle() => NativeMethods.DeleteDC(_dc);
+    public SafeCompatibleDc(IntPtr sourceDc) : base(IntPtr.Zero, true)
+    {
+        SetHandle(NativeMethods.CreateCompatibleDC(sourceDc));
+    }
+    public override bool IsInvalid => handle == IntPtr.Zero;
+    public static implicit operator IntPtr(SafeCompatibleDc s) => s.handle;
+    protected override bool ReleaseHandle() => NativeMethods.DeleteDC(handle);
 }
 
-file sealed class SafeBitmap(IntPtr sourceDc, int w, int h) : SafeHandle(IntPtr.Zero, true)
+file sealed class SafeBitmap : SafeHandle
 {
-    private readonly IntPtr _bmp = NativeMethods.CreateCompatibleBitmap(sourceDc, w, h);
-    public override bool IsInvalid => _bmp == IntPtr.Zero;
-    protected override bool ReleaseHandle() => NativeMethods.DeleteObject(_bmp);
-    public new IntPtr DangerousGetHandle() => _bmp;
+    public SafeBitmap(IntPtr sourceDc, int w, int h) : base(IntPtr.Zero, true)
+    {
+        SetHandle(NativeMethods.CreateCompatibleBitmap(sourceDc, w, h));
+    }
+    public override bool IsInvalid => handle == IntPtr.Zero;
+    protected override bool ReleaseHandle() => NativeMethods.DeleteObject(handle);
+    public new IntPtr DangerousGetHandle() => handle;
 }
 
-file sealed class SafeSelectObject(IntPtr hdc, IntPtr bmpHandle) : SafeHandle(IntPtr.Zero, true)
+file sealed class SafeSelectObject : SafeHandle
 {
-    private readonly IntPtr _old = NativeMethods.SelectObject(hdc, bmpHandle);
+    private readonly IntPtr _hdc;
+    private readonly IntPtr _old;
+    public SafeSelectObject(IntPtr hdc, IntPtr bmpHandle) : base(IntPtr.Zero, true)
+    {
+        _hdc = hdc;
+        _old = NativeMethods.SelectObject(hdc, bmpHandle);
+    }
     public override bool IsInvalid => false;
-    protected override bool ReleaseHandle() { NativeMethods.SelectObject(hdc, _old); return true; }
+    protected override bool ReleaseHandle() { NativeMethods.SelectObject(_hdc, _old); return true; }
 }

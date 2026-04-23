@@ -50,6 +50,5 @@ public class CaptureModelTests
         Assert.Equal(string.Empty, info.TempPath);
         Assert.Equal(0u, info.ScreenWidth);
         Assert.Equal(0u, info.ScreenHeight);
-        Assert.Equal(string.Empty, info.ImageDataUri);
     }
 }

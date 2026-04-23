@@ -41,7 +41,6 @@ public partial class WorkspaceViewModel : ObservableObject
         Items.Clear();
         foreach (var item in items.OrderByDescending(i => i.CreatedAt))
             Items.Add(item);
-        OnPropertyChanged(nameof(Items));
     }
 
     [RelayCommand]
@@ -53,7 +52,6 @@ public partial class WorkspaceViewModel : ObservableObject
         {
             var item = await _captureOrchestrator.CaptureFullScreenAsync();
             Items.Insert(0, item);
-            OnPropertyChanged(nameof(Items));
         }
         finally
         {
@@ -70,7 +68,6 @@ public partial class WorkspaceViewModel : ObservableObject
             var item = await _captureOrchestrator.CaptureWindowAsync(hwnd);
             Items.Insert(0, item);
             IsWindowSelectionMode = false;
-            OnPropertyChanged(nameof(Items));
         }
         finally
         {
@@ -103,7 +100,6 @@ public partial class WorkspaceViewModel : ObservableObject
                 RegionCaptureInfo.TempPath, region);
             Items.Insert(0, item);
             RegionCaptureInfo = null;
-            OnPropertyChanged(nameof(Items));
         }
         finally
         {
@@ -130,7 +126,6 @@ public partial class WorkspaceViewModel : ObservableObject
             foreach (var w in windows)
                 Windows.Add(w);
             IsWindowSelectionMode = true;
-            OnPropertyChanged(nameof(Windows));
         }
         finally
         {

@@ -32,7 +32,7 @@ public class CaptureOrchestrator : ICaptureOrchestrator
     {
         await _storageService.EnsureDirectoriesAsync();
 
-        var filename = $"capture_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+        var filename = $"capture_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
         var originalPath = _storageService.ResolveOriginalPath(filename);
         var editedPath = _storageService.ResolveEditedPath(filename);
         var thumbPath = _storageService.ResolveThumbnailPath(filename);
@@ -64,7 +64,7 @@ public class CaptureOrchestrator : ICaptureOrchestrator
     {
         await _storageService.EnsureDirectoriesAsync();
 
-        var filename = $"capture_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+        var filename = $"capture_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
         var originalPath = _storageService.ResolveOriginalPath(filename);
         var editedPath = _storageService.ResolveEditedPath(filename);
         var thumbPath = _storageService.ResolveThumbnailPath(filename);
@@ -98,16 +98,11 @@ public class CaptureOrchestrator : ICaptureOrchestrator
         var tempPath = Path.Combine(tempDir, $"amecapture_region_{Guid.NewGuid():N}.png");
         var captureResult = await _captureService.CaptureFullScreenAsync(tempPath);
 
-        var imageBytes = await File.ReadAllBytesAsync(tempPath);
-        var base64 = Convert.ToBase64String(imageBytes);
-        var imageDataUri = $"data:image/png;base64,{base64}";
-
         return new RegionCaptureInfo
         {
             TempPath = tempPath,
             ScreenWidth = captureResult.Width,
-            ScreenHeight = captureResult.Height,
-            ImageDataUri = imageDataUri
+            ScreenHeight = captureResult.Height
         };
     }
 
@@ -137,7 +132,7 @@ public class CaptureOrchestrator : ICaptureOrchestrator
         using var g = System.Drawing.Graphics.FromImage(cropped);
         g.DrawImage(img, 0, 0, new System.Drawing.Rectangle(x, y, w, h), System.Drawing.GraphicsUnit.Pixel);
 
-        var filename = $"capture_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+        var filename = $"capture_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
         var originalPath = _storageService.ResolveOriginalPath(filename);
         var editedPath = _storageService.ResolveEditedPath(filename);
         var thumbPath = _storageService.ResolveThumbnailPath(filename);

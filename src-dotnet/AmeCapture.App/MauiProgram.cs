@@ -95,14 +95,6 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        var app = builder.Build();
-
-        var dbFactory = app.Services.GetRequiredService<IDbConnectionFactory>();
-        DatabaseInitializer.InitializeAsync(dbFactory).GetAwaiter().GetResult();
-
-        var storageService = app.Services.GetRequiredService<IStorageService>();
-        storageService.EnsureDirectoriesAsync().GetAwaiter().GetResult();
-
-        return app;
+        return builder.Build();
     }
 }

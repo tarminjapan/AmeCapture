@@ -8,7 +8,7 @@
              Title="Workspace"
              Loaded="OnPageLoaded">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,*">
         <HorizontalStackLayout Grid.Row="0" Padding="16,8" Spacing="12">
             <Label Text="AmeCapture"
                    FontSize="24"
@@ -28,7 +28,7 @@
                                WidthRequest="24" HeightRequest="24" />
         </HorizontalStackLayout>
 
-        <CollectionView Grid.Row="2"
+        <CollectionView Grid.Row="1"
                         ItemsSource="{Binding Items}"
                         Margin="16,8"
                         EmptyView="No captures yet. Use a capture shortcut to get started.">
