@@ -1,0 +1,119 @@
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using AmeCapture.Application.Interfaces;
+using AmeCapture.Application.Models;
+
+namespace AmeCapture.Infrastructure.Services;
+
+[SupportedOSPlatform("windows")]
+public class WindowEnumerationService : IWindowEnumerationService
+{
+    public async Task<IReadOnlyList<WindowInfo>> EnumerateWindowsAsync()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            throw new PlatformNotSupportedException("Window enumeration is only supported on Windows.");
+
+        return await Task.Run(() =>
+        {
+            var windows = new List<WindowInfo>();
+            var handle = GCHandle.Alloc(windows);
+            try
+            {
+                NativeMethods.EnumWindows((hwnd, lParam) =>
+                {
+                    if (!NativeMethods.IsWindowVisible(hwnd))
+                        return true;
+
+                    long style = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_STYLE);
+                    if ((style & NativeMethods.WS_DISABLED) != 0)
+                        return true;
+
+                    if (NativeMethods.IsIconic(hwnd))
+                        return true;
+
+                    var titleBuf = new char[512];
+                    int titleLen = NativeMethods.GetWindowText(hwnd, titleBuf, titleBuf.Length);
+                    if (titleLen == 0)
+                        return true;
+                    string title = new string(titleBuf, 0, titleLen);
+                    if (string.IsNullOrWhiteSpace(title))
+                        return true;
+
+                    var classBuf = new char[256];
+                    int classLen = NativeMethods.GetClassName(hwnd, classBuf, classBuf.Length);
+                    string className = new string(classBuf, 0, classLen);
+
+                    var rect = new NativeMethods.RECT();
+                    int hr = NativeMethods.DwmGetWindowAttribute(hwnd,
+                        NativeMethods.DWMWA_EXTENDED_FRAME_BOUNDS,
+                        ref rect, Marshal.SizeOf<NativeMethods.RECT>());
+
+                    (int x, int y, int w, int h) bounds;
+                    if (hr >= 0)
+                    {
+                        bounds = (rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
+                    }
+                    else
+                    {
+                        var fallback = new NativeMethods.RECT();
+                        NativeMethods.GetWindowRect(hwnd, ref fallback);
+                        bounds = (fallback.Left, fallback.Top, fallback.Right - fallback.Left, fallback.Bottom - fallback.Top);
+                    }
+
+                    var list = (List<WindowInfo>)GCHandle.FromIntPtr(lParam).Target!;
+                    list.Add(new WindowInfo
+                    {
+                        Hwnd = hwnd,
+                        Title = title,
+                        ClassName = className,
+                        Bounds = bounds
+                    });
+                    return true;
+                }, GCHandle.ToIntPtr(handle));
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            windows.Sort((a, b) => string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase));
+            return windows;
+        });
+    }
+}
+
+file static class NativeMethods
+{
+    public const int GWL_STYLE = -16;
+    public const long WS_DISABLED = 0x08000000L;
+    public const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT { public int Left, Top, Right, Bottom; }
+
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetWindowText(IntPtr hWnd, char[] lpString, int nMaxCount);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetClassName(IntPtr hWnd, char[] lpClassName, int nMaxCount);
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, ref RECT pvAttribute, int cbAttribute);
+
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hWnd, ref RECT rect);
+}
