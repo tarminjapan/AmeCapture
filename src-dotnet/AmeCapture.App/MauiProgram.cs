@@ -1,3 +1,7 @@
+using AmeCapture.Application.Interfaces;
+using AmeCapture.Infrastructure.Database;
+using AmeCapture.Infrastructure.Repositories;
+using AmeCapture.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -50,6 +54,38 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
+        var basePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AmeCapture",
+            "data");
+
+        var dbPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AmeCapture",
+            "amecapture.db");
+
+        builder.Services.AddSingleton<IDbConnectionFactory>(_ =>
+        {
+            var dir = Path.GetDirectoryName(dbPath)!;
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+            return new SqliteConnectionFactory(dbPath);
+        });
+
+        builder.Services.AddSingleton<IStorageService>(_ =>
+            new StorageService(basePath));
+
+        builder.Services.AddSingleton<IWorkspaceRepository, WorkspaceRepository>();
+        builder.Services.AddSingleton<ITagRepository, TagRepository>();
+        builder.Services.AddSingleton<ISettingsRepository, SettingsRepository>();
+
+#if WINDOWS
+        builder.Services.AddSingleton<ICaptureService, CaptureService>();
+        builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
+        builder.Services.AddSingleton<IWindowEnumerationService, WindowEnumerationService>();
+        builder.Services.AddSingleton<ICaptureOrchestrator, CaptureOrchestrator>();
+#endif
+
         builder.Services.AddTransient<ViewModels.WorkspaceViewModel>();
         builder.Services.AddTransient<Views.WorkspacePage>();
 
@@ -60,6 +96,12 @@ public static class MauiProgram
 #endif
 
         var app = builder.Build();
+
+        var dbFactory = app.Services.GetRequiredService<IDbConnectionFactory>();
+        DatabaseInitializer.InitializeAsync(dbFactory).GetAwaiter().GetResult();
+
+        var storageService = app.Services.GetRequiredService<IStorageService>();
+        storageService.EnsureDirectoriesAsync().GetAwaiter().GetResult();
 
         return app;
     }

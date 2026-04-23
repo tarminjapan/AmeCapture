@@ -2,31 +2,55 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewmodel="clr-namespace:AmeCapture.App.ViewModels"
+             xmlns:model="clr-namespace:AmeCapture.Domain.Entities;assembly=AmeCapture.Domain"
              x:Class="AmeCapture.App.Views.WorkspacePage"
              x:DataType="viewmodel:WorkspaceViewModel"
-             Title="Workspace">
+             Title="Workspace"
+             Loaded="OnPageLoaded">
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
         <HorizontalStackLayout Grid.Row="0" Padding="16,8" Spacing="12">
             <Label Text="AmeCapture"
                    FontSize="24"
                    FontAttributes="Bold"
                    VerticalOptions="Center" />
+            <Button Text="全画面"
+                    Command="{Binding CaptureFullScreenCommand}"
+                    SemanticProperties.Description="Capture full screen" />
+            <Button Text="領域"
+                    Command="{Binding PrepareRegionCaptureCommand}"
+                    SemanticProperties.Description="Capture region" />
+            <Button Text="ウィンドウ"
+                    Command="{Binding PrepareWindowCaptureCommand}"
+                    SemanticProperties.Description="Capture window" />
+            <ActivityIndicator IsRunning="{Binding IsCapturing}"
+                               IsVisible="{Binding IsCapturing}"
+                               WidthRequest="24" HeightRequest="24" />
         </HorizontalStackLayout>
 
-        <VerticalStackLayout Grid.Row="1"
-                             HorizontalOptions="Center"
-                             VerticalOptions="Center"
-                             Spacing="16">
-            <Label Text="No captures yet"
-                   FontSize="18"
-                   HorizontalOptions="Center"
-                   Opacity="0.5" />
-            <Label Text="Use a capture shortcut to get started"
-                   FontSize="14"
-                   HorizontalOptions="Center"
-                   Opacity="0.4" />
-        </VerticalStackLayout>
+        <CollectionView Grid.Row="2"
+                        ItemsSource="{Binding Items}"
+                        Margin="16,8"
+                        EmptyView="No captures yet. Use a capture shortcut to get started.">
+            <CollectionView.ItemsLayout>
+                <GridItemsLayout Orientation="Vertical" Span="4" HorizontalItemSpacing="12" VerticalItemSpacing="12" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="{x:Type model:WorkspaceItem}">
+                    <Border Padding="0" Margin="0" StrokeShape="RoundRectangle 8" HeightRequest="180" WidthRequest="180">
+                        <VerticalStackLayout>
+                            <Image Source="{Binding ThumbnailPath}"
+                                   Aspect="AspectFit"
+                                   HeightRequest="140" />
+                            <Label Text="{Binding Title}"
+                                   FontSize="12"
+                                   LineBreakMode="TailTruncation"
+                                   Margin="4,0" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
     </Grid>
 
 </ContentPage>
