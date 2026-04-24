@@ -14,11 +14,7 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
 
     public GlobalShortcutService()
     {
-        StartMessageLoop();
-    }
-
-    private void StartMessageLoop()
-    {
+        var tcs = new TaskCompletionSource<IntPtr>();
         _messageThread = new Thread(() =>
         {
             var wc = new WndClassEx
@@ -31,16 +27,10 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
 
             if (NativeMethods.RegisterClassEx(ref wc) != 0)
             {
-                _messageWindow = NativeMethods.CreateWindowEx(
-                    0,
-                    wc.ClassName,
-                    "",
-                    0,
-                    0, 0, 1, 1,
-                    IntPtr.Zero,
-                    IntPtr.Zero,
-                    IntPtr.Zero,
-                    IntPtr.Zero);
+                var hwnd = NativeMethods.CreateWindowEx(
+                    0, wc.ClassName, "", 0, 0, 0, 1, 1, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                _messageWindow = hwnd;
+                tcs.SetResult(hwnd);
 
                 while (_running)
                 {
@@ -55,14 +45,12 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
                     }
                 }
 
-                NativeMethods.DestroyWindow(_messageWindow);
+                NativeMethods.DestroyWindow(hwnd);
                 NativeMethods.UnregisterClass(wc.ClassName, IntPtr.Zero);
             }
-        })
-        {
-            IsBackground = true
-        };
+        }) { IsBackground = true };
         _messageThread.Start();
+        tcs.Task.Wait();
     }
 
     private IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
