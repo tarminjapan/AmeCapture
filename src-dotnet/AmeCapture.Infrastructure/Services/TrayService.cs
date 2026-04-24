@@ -50,7 +50,7 @@ public class TrayService : ITrayService
         _contextMenu.Items.Add(new ToolStripSeparator());
 
         var exitItem = new ToolStripMenuItem("終了");
-        exitItem.Click += (s, e) => Exit();
+        exitItem.Click += (s, e) => _messenger.Send(new AmeCapture.Application.Messages.ExitRequestedMessage());
         _contextMenu.Items.Add(exitItem);
 
         _notifyIcon = new NotifyIcon
@@ -119,8 +119,6 @@ public class TrayService : ITrayService
     {
         _notifyIcon?.Dispose();
         _contextMenu?.Dispose();
-        
-        _messenger.Send(new AmeCapture.Application.Messages.ExitRequestedMessage());
     }
 
     private void ShowSettings()

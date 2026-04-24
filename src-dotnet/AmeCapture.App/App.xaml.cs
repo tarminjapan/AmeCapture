@@ -64,10 +64,7 @@ public partial class App : global::Microsoft.Maui.Controls.Application
             var messenger = services.GetRequiredService<IMessenger>();
             messenger.Register<AmeCapture.Application.Messages.ExitRequestedMessage>(this, (r, m) =>
             {
-                Dispatcher.Dispatch(() =>
-                {
-                    Exit();
-                });
+                MainThread.BeginInvokeOnMainThread(Exit);
             });
 
             var dbFactory = services.GetRequiredService<IDbConnectionFactory>();
@@ -132,12 +129,14 @@ public partial class App : global::Microsoft.Maui.Controls.Application
             Serilog.Log.Error(ex, "Failed to register global shortcuts");
         }
     }
+#endif
 
     public void Exit()
     {
         _isExiting = true;
+#if WINDOWS
         _trayService?.Exit();
+#endif
         Quit();
     }
-#endif
 }
