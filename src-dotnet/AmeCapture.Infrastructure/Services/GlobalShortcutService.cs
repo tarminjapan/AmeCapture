@@ -3,11 +3,97 @@ using AmeCapture.Application.Interfaces;
 
 namespace AmeCapture.Infrastructure.Services;
 
-public class GlobalShortcutService : IGlobalShortcutService
+public class GlobalShortcutService : IGlobalShortcutService, IDisposable
 {
     private readonly Dictionary<string, HotKeyInfo> _hotKeys = new();
     private readonly object _lock = new();
     private int _nextId = 1;
+    private IntPtr _messageWindow = IntPtr.Zero;
+    private Thread? _messageThread;
+    private volatile bool _running = true;
+
+    public GlobalShortcutService()
+    {
+        StartMessageLoop();
+    }
+
+    private void StartMessageLoop()
+    {
+        _messageThread = new Thread(() =>
+        {
+            var wc = new WndClassEx
+            {
+                Size = Marshal.SizeOf<WndClassEx>(),
+                WindowProc = Marshal.GetFunctionPointerForDelegate<WndProcDelegate>(WndProc),
+                Instance = IntPtr.Zero,
+                ClassName = "GlobalShortcutService_" + Guid.NewGuid()
+            };
+
+            if (NativeMethods.RegisterClassEx(ref wc) != 0)
+            {
+                _messageWindow = NativeMethods.CreateWindowEx(
+                    0,
+                    wc.ClassName,
+                    "",
+                    0,
+                    0, 0, 1, 1,
+                    IntPtr.Zero,
+                    IntPtr.Zero,
+                    IntPtr.Zero,
+                    IntPtr.Zero);
+
+                while (_running)
+                {
+                    if (NativeMethods.PeekMessage(out var msg, IntPtr.Zero, 0, 0, 1))
+                    {
+                        NativeMethods.TranslateMessage(ref msg);
+                        NativeMethods.DispatchMessage(ref msg);
+                    }
+                    else
+                    {
+                        Thread.Sleep(10);
+                    }
+                }
+
+                NativeMethods.DestroyWindow(_messageWindow);
+                NativeMethods.UnregisterClass(wc.ClassName, IntPtr.Zero);
+            }
+        })
+        {
+            IsBackground = true
+        };
+        _messageThread.Start();
+    }
+
+    private IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+    {
+        const int WM_HOTKEY = 0x0312;
+
+        if (msg == WM_HOTKEY)
+        {
+            var hotKeyId = wParam.ToInt32();
+            lock (_lock)
+            {
+                foreach (var info in _hotKeys.Values)
+                {
+                    if (info.Id == hotKeyId)
+                    {
+                        try
+                        {
+                            info.Callback?.Invoke();
+                        }
+                        catch (Exception ex)
+                        {
+                            Serilog.Log.Warning(ex, "Hotkey callback failed");
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        return NativeMethods.DefWindowProc(hWnd, msg, wParam, lParam);
+    }
 
     public void RegisterHotKey(string name, string shortcut, Action callback)
     {
@@ -22,7 +108,7 @@ public class GlobalShortcutService : IGlobalShortcutService
             var keys = ParseShortcut(shortcut);
             var id = Interlocked.Increment(ref _nextId);
 
-            if (NativeMethods.RegisterHotKey(IntPtr.Zero, id, keys.Modifiers, keys.VirtualKey))
+            if (NativeMethods.RegisterHotKey(_messageWindow, id, keys.Modifiers, keys.VirtualKey))
             {
                 _hotKeys[name] = new HotKeyInfo
                 {
@@ -44,7 +130,7 @@ public class GlobalShortcutService : IGlobalShortcutService
         {
             if (_hotKeys.TryGetValue(name, out var info))
             {
-                NativeMethods.UnregisterHotKey(IntPtr.Zero, info.Id);
+                NativeMethods.UnregisterHotKey(_messageWindow, info.Id);
                 _hotKeys.Remove(name);
             }
         }
@@ -56,10 +142,17 @@ public class GlobalShortcutService : IGlobalShortcutService
         {
             foreach (var info in _hotKeys.Values)
             {
-                NativeMethods.UnregisterHotKey(IntPtr.Zero, info.Id);
+                NativeMethods.UnregisterHotKey(_messageWindow, info.Id);
             }
             _hotKeys.Clear();
         }
+    }
+
+    public void Dispose()
+    {
+        _running = false;
+        _messageThread?.Join(1000);
+        UnregisterAll();
     }
 
     private static (int Modifiers, int VirtualKey) ParseShortcut(string shortcut)
@@ -153,6 +246,36 @@ public class GlobalShortcutService : IGlobalShortcutService
         };
     }
 
+    private struct WndClassEx
+    {
+        public int Size;
+        public int Style;
+        public IntPtr WindowProc;
+        public int ClassExtra;
+        public int WindowExtra;
+        public IntPtr Instance;
+        public IntPtr Icon;
+        public IntPtr Cursor;
+        public IntPtr BackgroundBrush;
+        public IntPtr MenuName;
+        public string ClassName;
+        public IntPtr IconSm;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Msg
+    {
+        public IntPtr Hwnd;
+        public uint Message;
+        public IntPtr WParam;
+        public IntPtr LParam;
+        public uint Time;
+        public int PtX;
+        public int PtY;
+    }
+
+    private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
     private class HotKeyInfo
     {
         public int Id { get; set; }
@@ -168,9 +291,45 @@ public class GlobalShortcutService : IGlobalShortcutService
         public const int MOD_WIN = 0x0008;
 
         [DllImport("user32.dll")]
+        public static extern ushort RegisterClassEx(ref WndClassEx lpwcx);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr CreateWindowEx(
+            int dwExStyle,
+            string lpClassName,
+            string lpWindowName,
+            int dwStyle,
+            int x,
+            int y,
+            int nWidth,
+            int nHeight,
+            IntPtr hWndParent,
+            IntPtr hMenu,
+            IntPtr hInstance,
+            IntPtr lpParam);
+
+        [DllImport("user32.dll")]
+        public static extern bool DestroyWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
+
+        [DllImport("user32.dll")]
+        public static extern bool PeekMessage(out Msg lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax, uint wRemoveMsg);
+
+        [DllImport("user32.dll")]
+        public static extern bool TranslateMessage(ref Msg lpMsg);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr DispatchMessage(ref Msg lpMsg);
+
+        [DllImport("user32.dll")]
         public static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vk);
 
         [DllImport("user32.dll")]
         public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr DefWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
     }
 }
