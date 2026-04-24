@@ -52,8 +52,16 @@ public partial class EditorPage : ContentPage, IQueryAttributable
         if (string.IsNullOrEmpty(_viewModel.ImagePath) || !File.Exists(_viewModel.ImagePath))
             return;
 
-        _sourceBitmap = SKBitmap.Decode(_viewModel.ImagePath);
-        CanvasView.InvalidateSurface();
+        Task.Run(() =>
+        {
+            var bitmap = SKBitmap.Decode(_viewModel.ImagePath);
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                _sourceBitmap?.Dispose();
+                _sourceBitmap = bitmap;
+                CanvasView.InvalidateSurface();
+            });
+        });
     }
 
     private void OnPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
@@ -77,18 +85,18 @@ public partial class EditorPage : ContentPage, IQueryAttributable
 
         foreach (var annotation in _viewModel.Annotations)
         {
-            DrawAnnotation(canvas, annotation);
+            DrawAnnotation(canvas, annotation, _sourceBitmap.Width, _sourceBitmap.Height);
         }
 
         if (_viewModel.PreviewAnnotation != null)
         {
-            DrawAnnotation(canvas, _viewModel.PreviewAnnotation);
+            DrawAnnotation(canvas, _viewModel.PreviewAnnotation, _sourceBitmap.Width, _sourceBitmap.Height);
         }
 
         canvas.Restore();
     }
 
-    private static void DrawAnnotation(SKCanvas canvas, Annotation annotation)
+    private static void DrawAnnotation(SKCanvas canvas, Annotation annotation, int bitmapWidth, int bitmapHeight)
     {
         switch (annotation)
         {
@@ -105,7 +113,7 @@ public partial class EditorPage : ContentPage, IQueryAttributable
                 DrawText(canvas, text);
                 break;
             case CropAnnotation crop:
-                DrawCrop(canvas, crop);
+                DrawCrop(canvas, crop, bitmapWidth, bitmapHeight);
                 break;
         }
     }
@@ -208,15 +216,19 @@ public partial class EditorPage : ContentPage, IQueryAttributable
             Style = SKPaintStyle.Fill,
         };
 
+        var metrics = font.Metrics;
+        var baselineOffset = -metrics.Ascent;
+        var lineHeight = metrics.Descent - metrics.Ascent + metrics.Leading;
+
         var yOff = 0f;
         foreach (var line in text.Text.Split('\n'))
         {
-            canvas.DrawText(line, (float)text.X, (float)(text.Y - text.FontSize) + yOff, font, paint);
-            yOff += (float)text.FontSize;
+            canvas.DrawText(line, (float)text.X, (float)text.Y + baselineOffset + yOff, font, paint);
+            yOff += lineHeight;
         }
     }
 
-    private static void DrawCrop(SKCanvas canvas, CropAnnotation crop)
+    private static void DrawCrop(SKCanvas canvas, CropAnnotation crop, int bitmapWidth, int bitmapHeight)
     {
         using var dimPaint = new SKPaint
         {
@@ -224,10 +236,10 @@ public partial class EditorPage : ContentPage, IQueryAttributable
             Style = SKPaintStyle.Fill,
         };
 
-        canvas.DrawRect(0, 0, 99999, (float)crop.Y, dimPaint);
-        canvas.DrawRect(0, (float)(crop.Y + crop.Height), 99999, 99999, dimPaint);
+        canvas.DrawRect(0, 0, bitmapWidth, (float)crop.Y, dimPaint);
+        canvas.DrawRect(0, (float)(crop.Y + crop.Height), bitmapWidth, bitmapHeight - (float)(crop.Y + crop.Height), dimPaint);
         canvas.DrawRect(0, (float)crop.Y, (float)crop.X, (float)crop.Height, dimPaint);
-        canvas.DrawRect((float)(crop.X + crop.Width), (float)crop.Y, 99999, (float)crop.Height, dimPaint);
+        canvas.DrawRect((float)(crop.X + crop.Width), (float)crop.Y, bitmapWidth - (float)(crop.X + crop.Width), (float)crop.Height, dimPaint);
 
         using var borderPaint = new SKPaint
         {

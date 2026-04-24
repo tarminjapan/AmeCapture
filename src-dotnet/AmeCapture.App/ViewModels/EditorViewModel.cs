@@ -14,8 +14,8 @@ public partial class EditorViewModel : ObservableObject
     private readonly IThumbnailService? _thumbnailService;
 
     private WorkspaceItem? _item;
-    private readonly Stack<IReadOnlyList<Annotation>> _undoStack = [];
-    private readonly Stack<IReadOnlyList<Annotation>> _redoStack = [];
+    private readonly List<IReadOnlyList<Annotation>> _undoStack = [];
+    private readonly List<IReadOnlyList<Annotation>> _redoStack = [];
 
     public ObservableCollection<Annotation> Annotations { get; } = [];
 
@@ -209,8 +209,10 @@ public partial class EditorViewModel : ObservableObject
     {
         if (_undoStack.Count == 0) return;
 
-        _redoStack.Push([.. Annotations]);
-        var previous = _undoStack.Pop();
+        _redoStack.Add([.. Annotations]);
+        var lastIndex = _undoStack.Count - 1;
+        var previous = _undoStack[lastIndex];
+        _undoStack.RemoveAt(lastIndex);
         Annotations.Clear();
         foreach (var a in previous)
             Annotations.Add(a);
@@ -225,8 +227,10 @@ public partial class EditorViewModel : ObservableObject
     {
         if (_redoStack.Count == 0) return;
 
-        _undoStack.Push([.. Annotations]);
-        var next = _redoStack.Pop();
+        _undoStack.Add([.. Annotations]);
+        var lastIndex = _redoStack.Count - 1;
+        var next = _redoStack[lastIndex];
+        _redoStack.RemoveAt(lastIndex);
         Annotations.Clear();
         foreach (var a in next)
             Annotations.Add(a);
@@ -329,14 +333,9 @@ public partial class EditorViewModel : ObservableObject
 
     private void PushUndoState()
     {
-        _undoStack.Push([.. Annotations]);
+        _undoStack.Add([.. Annotations]);
         if (_undoStack.Count > 50)
-        {
-            var list = _undoStack.ToList();
-            _undoStack.Clear();
-            foreach (var item in list.Skip(list.Count - 50))
-                _undoStack.Push(item);
-        }
+            _undoStack.RemoveAt(0);
     }
 
     private void UpdateUndoRedoState()

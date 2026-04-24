@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using AmeCapture.Application.Interfaces;
 using AmeCapture.Domain.Entities;
@@ -87,7 +88,7 @@ public class SkiaSharpEditorService : IEditorService
             var dir = Path.GetDirectoryName(outputPath);
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
-            using var stream = File.OpenWrite(outputPath);
+            using var stream = File.Create(outputPath);
             data.SaveTo(stream);
 
             workingBitmap.Dispose();
@@ -186,6 +187,13 @@ public class SkiaSharpEditorService : IEditorService
         if (x1 <= x0 || y1 <= y0) return;
 
         var blockSize = Math.Max(1, mosaic.Strength);
+        var bpp = bitmap.BytesPerPixel;
+        if (bpp == 0) return;
+
+        var basePtr = bitmap.GetPixels();
+        if (basePtr == IntPtr.Zero) return;
+
+        var rowBytes = bitmap.RowBytes;
 
         for (var by = y0; by < y1; by += blockSize)
         for (var bx = x0; bx < x1; bx += blockSize)
@@ -197,25 +205,34 @@ public class SkiaSharpEditorService : IEditorService
             var count = bw * bh;
 
             for (var py = by; py < by + bh; py++)
-            for (var px = bx; px < bx + bw; px++)
             {
-                var pixel = bitmap.GetPixel(px, py);
-                rSum += pixel.Red;
-                gSum += pixel.Green;
-                bSum += pixel.Blue;
-                aSum += pixel.Alpha;
+                var rowOff = py * rowBytes + bx * bpp;
+                for (var px = 0; px < bw; px++)
+                {
+                    var off = (int)(rowOff + px * bpp);
+                    bSum += Marshal.ReadByte(basePtr, off);
+                    gSum += Marshal.ReadByte(basePtr, off + 1);
+                    rSum += Marshal.ReadByte(basePtr, off + 2);
+                    aSum += Marshal.ReadByte(basePtr, off + 3);
+                }
             }
 
-            var avgColor = new SKColor(
-                (byte)(rSum / count),
-                (byte)(gSum / count),
-                (byte)(bSum / count),
-                (byte)(aSum / count));
+            var avgB = (byte)(bSum / count);
+            var avgG = (byte)(gSum / count);
+            var avgR = (byte)(rSum / count);
+            var avgA = (byte)(aSum / count);
 
             for (var py = by; py < by + bh; py++)
-            for (var px = bx; px < bx + bw; px++)
             {
-                bitmap.SetPixel(px, py, avgColor);
+                var rowOff = py * rowBytes + bx * bpp;
+                for (var px = 0; px < bw; px++)
+                {
+                    var off = (int)(rowOff + px * bpp);
+                    Marshal.WriteByte(basePtr, off, avgB);
+                    Marshal.WriteByte(basePtr, off + 1, avgG);
+                    Marshal.WriteByte(basePtr, off + 2, avgR);
+                    Marshal.WriteByte(basePtr, off + 3, avgA);
+                }
             }
         }
     }
