@@ -7,6 +7,7 @@ public class GlobalShortcutService : IGlobalShortcutService
 {
     private readonly Dictionary<string, HotKeyInfo> _hotKeys = new();
     private readonly object _lock = new();
+    private int _nextId = 1;
 
     public void RegisterHotKey(string name, string shortcut, Action callback)
     {
@@ -19,7 +20,7 @@ public class GlobalShortcutService : IGlobalShortcutService
                 UnregisterHotKey(name);
 
             var keys = ParseShortcut(shortcut);
-            var id = _hotKeys.Count + 1;
+            var id = Interlocked.Increment(ref _nextId);
 
             if (NativeMethods.RegisterHotKey(IntPtr.Zero, id, keys.Modifiers, keys.VirtualKey))
             {

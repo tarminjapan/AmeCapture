@@ -1,3 +1,4 @@
+using System.Security;
 using AmeCapture.Application.Interfaces;
 
 namespace AmeCapture.Infrastructure.Services;
@@ -10,15 +11,18 @@ public class NotificationService : INotificationService
         {
             try
             {
-                var toastXml = System.Xml.Linq.XElement.Parse(@"
+                var escapedTitle = SecurityElement.Escape(title) ?? title;
+                var escapedMessage = SecurityElement.Escape(message) ?? message;
+                
+                var toastXml = System.Xml.Linq.XElement.Parse($@"
 <toast>
     <visual>
         <binding template='ToastText02'>
-            <text id='1'>{title}</text>
-            <text id='2'>{message}</text>
+            <text id='1'>{escapedTitle}</text>
+            <text id='2'>{escapedMessage}</text>
         </binding>
     </visual>
-</toast>".Replace("{title}", title).Replace("{message}", message));
+</toast>");
 
                 var xml = new Windows.Data.Xml.Dom.XmlDocument();
                 xml.LoadXml(toastXml.ToString());

@@ -1,4 +1,5 @@
 using AmeCapture.Application.Interfaces;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace AmeCapture.Infrastructure.Services;
 
@@ -6,11 +7,11 @@ public class TrayService : ITrayService
 {
     private NotifyIcon? _notifyIcon;
     private ContextMenuStrip? _contextMenu;
-    private readonly Action<string>? _onCaptureRequested;
+    private readonly IMessenger _messenger;
 
-    public TrayService(IServiceProvider serviceProvider, Action<string>? onCaptureRequested = null)
+    public TrayService(IMessenger messenger)
     {
-        _onCaptureRequested = onCaptureRequested;
+        _messenger = messenger;
     }
 
     public void Initialize()
@@ -75,11 +76,16 @@ public class TrayService : ITrayService
     {
         _notifyIcon?.Dispose();
         _contextMenu?.Dispose();
-        Environment.Exit(0);
+        Microsoft.Maui.Controls.Application.Current?.Quit();
     }
 
     private void TriggerCapture(string captureType)
     {
-        _onCaptureRequested?.Invoke(captureType);
+        _messenger.Send(new CaptureRequestedMessage(captureType));
     }
+}
+
+public class CaptureRequestedMessage(string captureType)
+{
+    public string CaptureType { get; } = captureType;
 }
