@@ -85,6 +85,10 @@ public static class MauiProgram
         builder.Services.AddSingleton<IWindowEnumerationService, WindowEnumerationService>();
         builder.Services.AddSingleton<ICaptureOrchestrator, CaptureOrchestrator>();
         builder.Services.AddSingleton<IEditorService, SkiaSharpEditorService>();
+        builder.Services.AddSingleton<IGlobalShortcutService, GlobalShortcutService>();
+        builder.Services.AddSingleton<IClipboardService, ClipboardService>();
+        builder.Services.AddSingleton<INotificationService, NotificationService>();
+        builder.Services.AddSingleton<ITrayService, TrayService>();
 #endif
 
         builder.Services.AddTransient<ViewModels.WorkspaceViewModel>();
