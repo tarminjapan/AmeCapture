@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Runtime.InteropServices;
 using AmeCapture.Application.Interfaces;
 using CommunityToolkit.Mvvm.Messaging;
 
@@ -41,6 +43,12 @@ public class TrayService : ITrayService
 
         _contextMenu.Items.Add(new ToolStripSeparator());
 
+        var settingsItem = new ToolStripMenuItem("設定");
+        settingsItem.Click += (s, e) => ShowSettings();
+        _contextMenu.Items.Add(settingsItem);
+
+        _contextMenu.Items.Add(new ToolStripSeparator());
+
         var exitItem = new ToolStripMenuItem("終了");
         exitItem.Click += (s, e) => Exit();
         _contextMenu.Items.Add(exitItem);
@@ -62,21 +70,67 @@ public class TrayService : ITrayService
         };
     }
 
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    private const int SW_HIDE = 0;
+    private const int SW_SHOW = 5;
+
     public void ShowWindow()
     {
-        // Window management will be handled by the app
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            var window = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
+            if (window != null)
+            {
+#if WINDOWS
+                var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
+                if (platformWindow != null)
+                {
+                    var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(platformWindow);
+                    ShowWindow(hWnd, SW_SHOW);
+                    platformWindow.Activate();
+                }
+#endif
+            }
+        });
     }
 
     public void HideWindow()
     {
-        // Window management will be handled by the app
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            var window = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
+            if (window != null)
+            {
+#if WINDOWS
+                var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
+                if (platformWindow != null)
+                {
+                    var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(platformWindow);
+                    ShowWindow(hWnd, SW_HIDE);
+                }
+#endif
+            }
+        });
     }
 
     public void Exit()
     {
         _notifyIcon?.Dispose();
         _contextMenu?.Dispose();
-        Microsoft.Maui.Controls.Application.Current?.Quit();
+        
+        _messenger.Send(new AmeCapture.Application.Messages.ExitRequestedMessage());
+    }
+
+    private void ShowSettings()
+    {
+        ShowWindow();
+        // TODO: Navigate to SettingsPage once implemented
+        // MainThread.BeginInvokeOnMainThread(async () =>
+        // {
+        //     await Shell.Current.GoToAsync("SettingsPage");
+        // });
     }
 
     private void TriggerCapture(string captureType)

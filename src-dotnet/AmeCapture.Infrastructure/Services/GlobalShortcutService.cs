@@ -83,10 +83,10 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
         return NativeMethods.DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
-    public void RegisterHotKey(string name, string shortcut, Action callback)
+    public bool RegisterHotKey(string name, string shortcut, Action callback)
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            throw new PlatformNotSupportedException("Global shortcuts are only supported on Windows.");
+            return false;
 
         lock (_lock)
         {
@@ -104,10 +104,12 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
                     Callback = callback,
                     Keys = keys
                 };
+                return true;
             }
             else
             {
-                throw new InvalidOperationException($"Failed to register hotkey: {shortcut}");
+                Serilog.Log.Warning("Failed to register hotkey: {Shortcut}", shortcut);
+                return false;
             }
         }
     }
