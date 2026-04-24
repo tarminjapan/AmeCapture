@@ -31,6 +31,7 @@
         <CollectionView Grid.Row="1"
                         ItemsSource="{Binding Items}"
                         Margin="16,8"
+                        SelectionMode="None"
                         EmptyView="No captures yet. Use a capture shortcut to get started.">
             <CollectionView.ItemsLayout>
                 <GridItemsLayout Orientation="Vertical" Span="4" HorizontalItemSpacing="12" VerticalItemSpacing="12" />
@@ -38,6 +39,9 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="{x:Type model:WorkspaceItem}">
                     <Border Padding="0" Margin="0" StrokeShape="RoundRectangle 8" HeightRequest="180" WidthRequest="180">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnItemTapped" />
+                        </Border.GestureRecognizers>
                         <VerticalStackLayout>
                             <Image Source="{Binding ThumbnailPath}"
                                    Aspect="AspectFit"

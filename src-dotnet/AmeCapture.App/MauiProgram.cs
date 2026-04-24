@@ -84,10 +84,13 @@ public static class MauiProgram
         builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
         builder.Services.AddSingleton<IWindowEnumerationService, WindowEnumerationService>();
         builder.Services.AddSingleton<ICaptureOrchestrator, CaptureOrchestrator>();
+        builder.Services.AddSingleton<IEditorService, SkiaSharpEditorService>();
 #endif
 
         builder.Services.AddTransient<ViewModels.WorkspaceViewModel>();
+        builder.Services.AddTransient<ViewModels.EditorViewModel>();
         builder.Services.AddTransient<Views.WorkspacePage>();
+        builder.Services.AddTransient<Views.EditorPage>();
 
         builder.Logging.AddSerilog(dispose: true);
 
