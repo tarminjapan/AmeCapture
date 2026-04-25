@@ -100,10 +100,13 @@ Copy-Item "$env:APPDATA\com.amecapture.app\amecapture.db" "$env:LOCALAPPDATA\Ame
 旧版のキャプチャ画像を新版のストレージに移行する場合:
 
 ```powershell
-# 新版のストレージディレクトリ構造を確認
-# originals/, edited/, thumbnails/, videos/ が作成される
+# 1. 新版のストレージディレクトリを作成（存在しない場合）
+New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\AmeCapture\data\originals"
+New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\AmeCapture\data\edited"
+New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\AmeCapture\data\thumbnails"
+New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\AmeCapture\data\videos"
 
-# 旧版のキャプチャ画像を新版にコピー（保存先が異なる場合）
+# 2. 旧版のキャプチャ画像を新版にコピー（保存先が異なる場合）
 # 例: 旧版の保存先が Pictures\AmeCapture の場合
 Copy-Item -Recurse "$env:USERPROFILE\Pictures\AmeCapture\originals\*" "$env:LOCALAPPDATA\AmeCapture\data\originals\"
 Copy-Item -Recurse "$env:USERPROFILE\Pictures\AmeCapture\edited\*" "$env:LOCALAPPDATA\AmeCapture\data\edited\"
@@ -111,6 +114,38 @@ Copy-Item -Recurse "$env:USERPROFILE\Pictures\AmeCapture\thumbnails\*" "$env:LOC
 ```
 
 **注意**: データベースをコピーした場合、`workspace_items` テーブルの `original_path`, `current_path`, `thumbnail_path` は旧パスのままです。新しいストレージにファイルを移動した場合は、DB 内のパスも更新する必要があります。ファイルを元の場所に残すか、新しい場所にコピーして DB のパスを更新してください。
+
+#### DB 内パスの更新例
+
+ファイルを新しいストレージに移動した場合、SQLite ツール（`sqlite3` コマンドなど）で以下の SQL を実行してパスを更新します:
+
+```sql
+-- 旧パスのプレフィックスと新パスのプレフィックスを定義して一括更新
+-- 例: C:\Users\<user>\Pictures\AmeCapture → C:\Users\<user>\AppData\Local\AmeCapture\data
+
+UPDATE workspace_items
+SET original_path = REPLACE(original_path,
+    'C:\Users\<ユーザー名>\Pictures\AmeCapture',
+    'C:\Users\<ユーザー名>\AppData\Local\AmeCapture\data')
+WHERE original_path LIKE 'C:\Users\<ユーザー名>\Pictures\AmeCapture%';
+
+UPDATE workspace_items
+SET current_path = REPLACE(current_path,
+    'C:\Users\<ユーザー名>\Pictures\AmeCapture',
+    'C:\Users\<ユーザー名>\AppData\Local\AmeCapture\data')
+WHERE current_path LIKE 'C:\Users\<ユーザー名>\Pictures\AmeCapture%';
+
+UPDATE workspace_items
+SET thumbnail_path = REPLACE(thumbnail_path,
+    'C:\Users\<ユーザー名>\Pictures\AmeCapture',
+    'C:\Users\<ユーザー名>\AppData\Local\AmeCapture\data')
+WHERE thumbnail_path LIKE 'C:\Users\<ユーザー名>\Pictures\AmeCapture%';
+
+-- 更新結果を確認
+SELECT id, original_path, current_path, thumbnail_path FROM workspace_items LIMIT 10;
+```
+
+> `<ユーザー名>` は実際の Windows ユーザー名に置き換えてください。PowerShell では `$env:USERPROFILE` で確認できます。
 
 ## 5. ロールバック手順
 

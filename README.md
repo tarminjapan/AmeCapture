@@ -36,7 +36,7 @@ AmeCapture/
 
 ### Primary (.NET MAUI)
 
-- **.NET 10** with **MAUI**
+- **.NET 10** with **MAUI** (Preview — 正式リリース後に安定版へ移行予定)
 - **CommunityToolkit.Mvvm** for MVVM pattern
 - **SkiaSharp** for image annotation rendering
 - **Microsoft.Data.Sqlite** for SQLite database
