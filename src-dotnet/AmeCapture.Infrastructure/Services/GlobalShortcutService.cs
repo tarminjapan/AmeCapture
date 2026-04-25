@@ -60,11 +60,15 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
 
         try
         {
-            tcs.Task.Wait(5000);
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch (TimeoutException)
+        {
+            Serilog.Log.Error("GlobalShortcutService initialization timed out");
         }
         catch (Exception ex)
         {
-            Serilog.Log.Error(ex, "GlobalShortcutService initialization timed out");
+            Serilog.Log.Error(ex, "GlobalShortcutService initialization failed");
         }
     }
 
