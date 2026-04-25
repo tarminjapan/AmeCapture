@@ -23,6 +23,19 @@
             <Button Text="ウィンドウ"
                     Command="{Binding PrepareWindowCaptureCommand}"
                     SemanticProperties.Description="Capture window" />
+            <BoxView WidthRequest="1" Color="Gray" Margin="4,0" />
+            <Button Text="コピー"
+                    Command="{Binding CopyToClipboardCommand}"
+                    IsEnabled="{Binding HasSelection}"
+                    SemanticProperties.Description="Copy selected image to clipboard" />
+            <Button Text="⭐"
+                    Command="{Binding ToggleFavoriteCommand}"
+                    IsEnabled="{Binding HasSelection}"
+                    SemanticProperties.Description="Toggle favorite" />
+            <Button Text="削除"
+                    Command="{Binding DeleteItemCommand}"
+                    IsEnabled="{Binding HasSelection}"
+                    SemanticProperties.Description="Delete selected item" />
             <ActivityIndicator IsRunning="{Binding IsCapturing}"
                                IsVisible="{Binding IsCapturing}"
                                WidthRequest="24" HeightRequest="24" />
@@ -38,7 +51,8 @@
             </CollectionView.ItemsLayout>
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="{x:Type model:WorkspaceItem}">
-                    <Border Padding="0" Margin="0" StrokeShape="RoundRectangle 8" HeightRequest="180" WidthRequest="180">
+                    <Border Padding="0" Margin="0" StrokeShape="RoundRectangle 8" HeightRequest="180" WidthRequest="180"
+                            BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}">
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnItemTapped" />
                         </Border.GestureRecognizers>

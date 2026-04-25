@@ -10,14 +10,16 @@ public partial class EditorPage : ContentPage, IQueryAttributable
 {
     private readonly EditorViewModel _viewModel;
     private readonly IWorkspaceRepository _workspaceRepository;
+    private readonly IClipboardService? _clipboardService;
     private SKBitmap? _sourceBitmap;
     private bool _isDragging;
 
-    public EditorPage(EditorViewModel viewModel, IWorkspaceRepository workspaceRepository)
+    public EditorPage(EditorViewModel viewModel, IWorkspaceRepository workspaceRepository, IClipboardService? clipboardService = null)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _workspaceRepository = workspaceRepository;
+        _clipboardService = clipboardService;
         BindingContext = viewModel;
 
         _viewModel.AnnotationsChanged += (_, _) => CanvasView.InvalidateSurface();
@@ -300,5 +302,21 @@ public partial class EditorPage : ContentPage, IQueryAttributable
         _sourceBitmap?.Dispose();
         _sourceBitmap = null;
         base.OnNavigatedFrom(args);
+    }
+
+    private async void OnCopyToClipboardClicked(object? sender, EventArgs e)
+    {
+        if (_clipboardService == null || string.IsNullOrEmpty(_viewModel.ImagePath)) return;
+
+        try
+        {
+            if (!File.Exists(_viewModel.ImagePath)) return;
+            using var image = System.Drawing.Image.FromFile(_viewModel.ImagePath);
+            await _clipboardService.SetImageAsync(image);
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "Failed to copy editor image to clipboard");
+        }
     }
 }

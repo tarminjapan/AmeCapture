@@ -32,6 +32,8 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
                 _messageWindow = hwnd;
                 tcs.SetResult(hwnd);
 
+                Serilog.Log.Information("GlobalShortcutService message loop started");
+
                 while (_running)
                 {
                     if (NativeMethods.PeekMessage(out var msg, IntPtr.Zero, 0, 0, 1))
@@ -48,9 +50,26 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
                 NativeMethods.DestroyWindow(hwnd);
                 NativeMethods.UnregisterClass(wc.ClassName, IntPtr.Zero);
             }
+            else
+            {
+                Serilog.Log.Error("Failed to register window class for GlobalShortcutService");
+                tcs.SetException(new InvalidOperationException("Failed to register window class"));
+            }
         }) { IsBackground = true };
         _messageThread.Start();
-        tcs.Task.Wait();
+
+        try
+        {
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch (TimeoutException)
+        {
+            Serilog.Log.Error("GlobalShortcutService initialization timed out");
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "GlobalShortcutService initialization failed");
+        }
     }
 
     private IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)

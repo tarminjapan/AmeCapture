@@ -1,4 +1,5 @@
 using AmeCapture.Application.Interfaces;
+using AmeCapture.Application.Messages;
 using AmeCapture.Infrastructure.Database;
 using AmeCapture.Infrastructure.Services;
 using CommunityToolkit.Mvvm.Messaging;

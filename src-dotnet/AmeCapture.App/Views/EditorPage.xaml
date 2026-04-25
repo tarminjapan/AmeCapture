@@ -21,6 +21,8 @@
             <BoxView WidthRequest="1" Color="Gray" Margin="4,0" />
             <Button Text="Save" Command="{Binding SaveCommand}" IsEnabled="{Binding IsDirty}" />
             <Button Text="Save As" Command="{Binding SaveAsCommand}" />
+            <BoxView WidthRequest="1" Color="Gray" Margin="4,0" />
+            <Button Text="Copy" x:Name="CopyToClipboardButton" Clicked="OnCopyToClipboardClicked" />
             <ActivityIndicator IsRunning="{Binding IsSaving}" IsVisible="{Binding IsSaving}" WidthRequest="24" HeightRequest="24" />
         </HorizontalStackLayout>
 

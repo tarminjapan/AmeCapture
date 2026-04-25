@@ -13,19 +13,22 @@ public class CaptureOrchestrator : ICaptureOrchestrator
     private readonly IWindowEnumerationService _windowEnumerationService;
     private readonly IStorageService _storageService;
     private readonly IWorkspaceRepository _workspaceRepository;
+    private readonly IClipboardService? _clipboardService;
 
     public CaptureOrchestrator(
         ICaptureService captureService,
         IThumbnailService thumbnailService,
         IWindowEnumerationService windowEnumerationService,
         IStorageService storageService,
-        IWorkspaceRepository workspaceRepository)
+        IWorkspaceRepository workspaceRepository,
+        IClipboardService? clipboardService = null)
     {
         _captureService = captureService;
         _thumbnailService = thumbnailService;
         _windowEnumerationService = windowEnumerationService;
         _storageService = storageService;
         _workspaceRepository = workspaceRepository;
+        _clipboardService = clipboardService;
     }
 
     public async Task<WorkspaceItem> CaptureFullScreenAsync()
@@ -57,6 +60,7 @@ public class CaptureOrchestrator : ICaptureOrchestrator
         };
 
         await _workspaceRepository.AddAsync(item);
+        await CopyToClipboardAsync(originalPath);
         return item;
     }
 
@@ -89,6 +93,7 @@ public class CaptureOrchestrator : ICaptureOrchestrator
         };
 
         await _workspaceRepository.AddAsync(item);
+        await CopyToClipboardAsync(originalPath);
         return item;
     }
 
@@ -157,6 +162,7 @@ public class CaptureOrchestrator : ICaptureOrchestrator
         };
 
         await _workspaceRepository.AddAsync(item);
+        await CopyToClipboardAsync(originalPath);
         TryDeleteFile(sourcePath);
         return item;
     }
@@ -197,5 +203,20 @@ public class CaptureOrchestrator : ICaptureOrchestrator
     {
         try { if (File.Exists(path)) File.Delete(path); }
         catch { }
+    }
+
+    private async Task CopyToClipboardAsync(string imagePath)
+    {
+        if (_clipboardService == null || !File.Exists(imagePath)) return;
+
+        try
+        {
+            using var image = System.Drawing.Image.FromFile(imagePath);
+            await _clipboardService.SetImageAsync(image);
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Warning(ex, "Failed to copy captured image to clipboard");
+        }
     }
 }
