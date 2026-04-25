@@ -11,12 +11,12 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task<IReadOnlyList<Tag>> GetAllAsync()
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = "SELECT id, name FROM tags ORDER BY name";
 
             var tags = new List<Tag>();
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 tags.Add(ReadTag(reader));
@@ -27,30 +27,30 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task<Tag?> GetByIdAsync(string id)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = "SELECT id, name FROM tags WHERE id = @id";
             AddParameter(command, "@id", id);
 
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             return await reader.ReadAsync() ? ReadTag(reader) : null;
         }
 
         public async Task<Tag?> FindByNameAsync(string name)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = "SELECT id, name FROM tags WHERE name = @name";
             AddParameter(command, "@name", name);
 
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             return await reader.ReadAsync() ? ReadTag(reader) : null;
         }
 
         public async Task AddAsync(Tag tag)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = "INSERT INTO tags (id, name) VALUES (@id, @name)";
             AddParameter(command, "@id", tag.Id);
             AddParameter(command, "@name", tag.Name);
@@ -60,8 +60,8 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task DeleteAsync(string id)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = "DELETE FROM tags WHERE id = @id";
             AddParameter(command, "@id", id);
 
@@ -70,8 +70,8 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task<IReadOnlyList<Tag>> GetTagsForItemAsync(string itemId)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             SELECT t.id, t.name FROM tags t
             INNER JOIN workspace_item_tags wit ON t.id = wit.tag_id
@@ -80,7 +80,7 @@ namespace AmeCapture.Infrastructure.Repositories
             AddParameter(command, "@itemId", itemId);
 
             var tags = new List<Tag>();
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 tags.Add(ReadTag(reader));
@@ -91,8 +91,8 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task AddTagToItemAsync(string itemId, string tagId)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             INSERT OR IGNORE INTO workspace_item_tags (workspace_item_id, tag_id) VALUES (@itemId, @tagId)";
             AddParameter(command, "@itemId", itemId);
@@ -103,8 +103,8 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task RemoveTagFromItemAsync(string itemId, string tagId)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             DELETE FROM workspace_item_tags WHERE workspace_item_id = @itemId AND tag_id = @tagId";
             AddParameter(command, "@itemId", itemId);
@@ -115,12 +115,12 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task SetTagsForItemAsync(string itemId, IEnumerable<string> tagIds)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var transaction = await connection.BeginTransactionAsync();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbTransaction transaction = await connection.BeginTransactionAsync();
 
             try
             {
-                using (var deleteCommand = connection.CreateCommand())
+                using (DbCommand deleteCommand = connection.CreateCommand())
                 {
                     deleteCommand.Transaction = transaction;
                     deleteCommand.CommandText =
@@ -129,13 +129,13 @@ namespace AmeCapture.Infrastructure.Repositories
                     _ = await deleteCommand.ExecuteNonQueryAsync();
                 }
 
-                using (var insertCommand = connection.CreateCommand())
+                using (DbCommand insertCommand = connection.CreateCommand())
                 {
                     insertCommand.Transaction = transaction;
                     insertCommand.CommandText = @"
                     INSERT OR IGNORE INTO workspace_item_tags (workspace_item_id, tag_id) VALUES (@itemId, @tagId)";
                     AddParameter(insertCommand, "@itemId", itemId);
-                    var tagParam = insertCommand.CreateParameter();
+                    DbParameter tagParam = insertCommand.CreateParameter();
                     tagParam.ParameterName = "@tagId";
                     _ = insertCommand.Parameters.Add(tagParam);
 
@@ -157,14 +157,14 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task<IReadOnlyList<string>> GetItemIdsByTagAsync(string tagId)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText =
                 "SELECT workspace_item_id FROM workspace_item_tags WHERE tag_id = @tagId";
             AddParameter(command, "@tagId", tagId);
 
             var ids = new List<string>();
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 ids.Add(reader.GetString(0));
@@ -188,8 +188,8 @@ namespace AmeCapture.Infrastructure.Repositories
                 map[id] = [];
             }
 
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             SELECT wit.workspace_item_id, t.id, t.name
             FROM workspace_item_tags wit
@@ -198,7 +198,7 @@ namespace AmeCapture.Infrastructure.Repositories
             ORDER BY t.name";
             AddParameter(command, "@ids", JsonSerializer.Serialize(idList));
 
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 string itemId = reader.GetString(0);
@@ -216,7 +216,7 @@ namespace AmeCapture.Infrastructure.Repositories
 
         private static void AddParameter(DbCommand command, string name, object value)
         {
-            var param = command.CreateParameter();
+            DbParameter param = command.CreateParameter();
             param.ParameterName = name;
             param.Value = value;
             _ = command.Parameters.Add(param);

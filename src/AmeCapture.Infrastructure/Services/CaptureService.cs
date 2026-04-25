@@ -39,7 +39,7 @@ namespace AmeCapture.Infrastructure.Services
                     throw new InvalidOperationException("BitBlt failed.");
                 }
 
-                using var img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
+                using Bitmap img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
                 img.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
                 Serilog.Log.Debug("Image saved to {SavePath}, size={Size} bytes", savePath, new FileInfo(savePath).Length);
 
@@ -68,7 +68,7 @@ namespace AmeCapture.Infrastructure.Services
                     _ = Directory.CreateDirectory(dir);
                 }
 
-                var (left, top, right, bottom) = GetWindowBounds(hwnd);
+                (int left, int top, int right, int bottom) = GetWindowBounds(hwnd);
                 int width = right - left;
                 int height = bottom - top;
                 Serilog.Log.Debug("Window bounds: left={Left}, top={Top}, right={Right}, bottom={Bottom}, size={Width}x{Height}", left, top, right, bottom, width, height);
@@ -90,7 +90,7 @@ namespace AmeCapture.Infrastructure.Services
                     throw new InvalidOperationException("BitBlt failed.");
                 }
 
-                using var img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
+                using Bitmap img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
                 img.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
                 Serilog.Log.Debug("Window image saved to {SavePath}, size={Size} bytes", savePath, new FileInfo(savePath).Length);
 

@@ -1,5 +1,6 @@
 using AmeCapture.Domain.Entities;
 using AmeCapture.Infrastructure.Services;
+using SkiaSharp;
 
 namespace AmeCapture.Tests.Integration
 {
@@ -36,14 +37,14 @@ namespace AmeCapture.Tests.Integration
         private string CreateTestImage(int width = 100, int height = 100)
         {
             string path = Path.Combine(_tempDir, $"test_{Guid.NewGuid():N}.png");
-            using var bitmap = new SkiaSharp.SKBitmap(width, height);
-            using var canvas = new SkiaSharp.SKCanvas(bitmap);
-            canvas.Clear(new SkiaSharp.SKColor(200, 200, 200, 255));
+            using var bitmap = new SKBitmap(width, height);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(new SKColor(200, 200, 200, 255));
             canvas.Flush();
 
-            using var image = SkiaSharp.SKImage.FromBitmap(bitmap);
-            using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
-            using var stream = File.OpenWrite(path);
+            using var image = SKImage.FromBitmap(bitmap);
+            using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using FileStream stream = File.OpenWrite(path);
             data.SaveTo(stream);
 
             return path;
@@ -79,7 +80,7 @@ namespace AmeCapture.Tests.Integration
             await _editorService.ApplyAnnotationsAsync(sourcePath, outputPath, annotations);
 
             Assert.True(File.Exists(outputPath));
-            using var result = SkiaSharp.SKBitmap.Decode(outputPath);
+            using var result = SKBitmap.Decode(outputPath);
             Assert.NotNull(result);
             Assert.Equal(100, result.Width);
             Assert.Equal(100, result.Height);
@@ -163,7 +164,7 @@ namespace AmeCapture.Tests.Integration
             await _editorService.ApplyAnnotationsAsync(sourcePath, outputPath, annotations);
 
             Assert.True(File.Exists(outputPath));
-            using var result = SkiaSharp.SKBitmap.Decode(outputPath);
+            using var result = SKBitmap.Decode(outputPath);
             Assert.NotNull(result);
             Assert.Equal(100, result.Width);
             Assert.Equal(100, result.Height);
@@ -192,7 +193,7 @@ namespace AmeCapture.Tests.Integration
             await _editorService.ApplyAnnotationsAsync(sourcePath, outputPath, annotations);
 
             Assert.True(File.Exists(outputPath));
-            using var result = SkiaSharp.SKBitmap.Decode(outputPath);
+            using var result = SKBitmap.Decode(outputPath);
             Assert.Equal(100, result.Width);
             Assert.Equal(100, result.Height);
         }

@@ -10,13 +10,13 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task<AppSettings> GetAsync()
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = "SELECT key, value FROM app_settings ORDER BY key";
 
             var settings = new AppSettings();
 
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 string key = reader.GetString(0);
@@ -52,8 +52,8 @@ namespace AmeCapture.Infrastructure.Repositories
 
         public async Task SaveAsync(AppSettings settings)
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var transaction = await connection.BeginTransactionAsync();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbTransaction transaction = await connection.BeginTransactionAsync();
 
             try
             {
@@ -77,17 +77,17 @@ namespace AmeCapture.Infrastructure.Repositories
         private static async Task UpsertAsync(DbConnection connection, DbTransaction transaction,
             string key, string value)
         {
-            using var command = connection.CreateCommand();
+            using DbCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = @"
             INSERT INTO app_settings (key, value) VALUES (@key, @value)
             ON CONFLICT(key) DO UPDATE SET value = @value";
-            var keyParam = command.CreateParameter();
+            DbParameter keyParam = command.CreateParameter();
             keyParam.ParameterName = "@key";
             keyParam.Value = key;
             _ = command.Parameters.Add(keyParam);
 
-            var valueParam = command.CreateParameter();
+            DbParameter valueParam = command.CreateParameter();
             valueParam.ParameterName = "@value";
             valueParam.Value = value;
             _ = command.Parameters.Add(valueParam);

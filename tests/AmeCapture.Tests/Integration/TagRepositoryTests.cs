@@ -60,7 +60,7 @@ namespace AmeCapture.Tests.Integration
             await _repo.AddAsync(new Tag { Id = "t1", Name = "tag1" });
             await _repo.AddAsync(new Tag { Id = "t2", Name = "tag2" });
 
-            var tags = await _repo.GetAllAsync();
+            IReadOnlyList<Tag> tags = await _repo.GetAllAsync();
             Assert.Equal(2, tags.Count);
             Assert.Equal("tag1", tags[0].Name);
             Assert.Equal("tag2", tags[1].Name);
@@ -71,7 +71,7 @@ namespace AmeCapture.Tests.Integration
         {
             await _repo.AddAsync(new Tag { Id = "t1", Name = "tag1" });
 
-            var found = await _repo.GetByIdAsync("t1");
+            Tag? found = await _repo.GetByIdAsync("t1");
             Assert.NotNull(found);
             Assert.Equal("tag1", found.Name);
 
@@ -83,7 +83,7 @@ namespace AmeCapture.Tests.Integration
         {
             await _repo.AddAsync(new Tag { Id = "t1", Name = "tag1" });
 
-            var found = await _repo.FindByNameAsync("tag1");
+            Tag? found = await _repo.FindByNameAsync("tag1");
             Assert.NotNull(found);
 
             Assert.Null(await _repo.FindByNameAsync("nonexistent"));
@@ -107,7 +107,7 @@ namespace AmeCapture.Tests.Integration
             await _repo.AddTagToItemAsync("w1", "t1");
             await _repo.AddTagToItemAsync("w1", "t2");
 
-            var tags = await _repo.GetTagsForItemAsync("w1");
+            IReadOnlyList<Tag> tags = await _repo.GetTagsForItemAsync("w1");
             Assert.Equal(2, tags.Count);
         }
 
@@ -133,7 +133,7 @@ namespace AmeCapture.Tests.Integration
             await _repo.AddAsync(new Tag { Id = "t3", Name = "tag3" });
 
             await _repo.SetTagsForItemAsync("w1", ["t1", "t2"]);
-            var tags = await _repo.GetTagsForItemAsync("w1");
+            IReadOnlyList<Tag> tags = await _repo.GetTagsForItemAsync("w1");
             Assert.Equal(2, tags.Count);
 
             await _repo.SetTagsForItemAsync("w1", ["t3"]);
@@ -151,7 +151,7 @@ namespace AmeCapture.Tests.Integration
             await _repo.AddTagToItemAsync("w1", "t1");
             await _repo.AddTagToItemAsync("w2", "t1");
 
-            var ids = await _repo.GetItemIdsByTagAsync("t1");
+            IReadOnlyList<string> ids = await _repo.GetItemIdsByTagAsync("t1");
             Assert.Equal(2, ids.Count);
             Assert.Contains("w1", ids);
             Assert.Contains("w2", ids);
@@ -167,7 +167,7 @@ namespace AmeCapture.Tests.Integration
             await _repo.AddTagToItemAsync("w1", "t1");
             await _repo.AddTagToItemAsync("w2", "t2");
 
-            var map = await _repo.GetAllTagsForItemsAsync(["w1", "w2"]);
+            IReadOnlyDictionary<string, IReadOnlyList<Tag>> map = await _repo.GetAllTagsForItemsAsync(["w1", "w2"]);
             Assert.Equal(2, map.Count);
             _ = Assert.Single(map["w1"]);
             _ = Assert.Single(map["w2"]);
@@ -176,7 +176,7 @@ namespace AmeCapture.Tests.Integration
         [Fact]
         public async Task GetAllTagsForItems_EmptyInput_ReturnsEmpty()
         {
-            var map = await _repo.GetAllTagsForItemsAsync([]);
+            IReadOnlyDictionary<string, IReadOnlyList<Tag>> map = await _repo.GetAllTagsForItemsAsync([]);
             Assert.Empty(map);
         }
     }

@@ -25,7 +25,7 @@ namespace AmeCapture.Infrastructure.Services
         public async Task EnsureDirectoriesAsync()
         {
             Serilog.Log.Debug("StorageService.EnsureDirectoriesAsync: basePath={BasePath}", _basePath);
-            string[] dirs = new[] { DirOriginals, DirEdited, DirThumbnails, DirVideos };
+            string[] dirs = [DirOriginals, DirEdited, DirThumbnails, DirVideos];
             foreach (string? dir in dirs)
             {
                 string path = Path.Combine(_basePath, dir);

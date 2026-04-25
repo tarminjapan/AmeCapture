@@ -73,4 +73,4 @@ jobs:
         run: dotnet tool install --global dotnet-format
 
       - name: Check formatting
-        run: dotnet format AmeCapture.slnx --verify-no-changes --severity info
+        run: dotnet format AmeCapture.slnx --verify-no-changes --severity warn

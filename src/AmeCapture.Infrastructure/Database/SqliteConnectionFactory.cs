@@ -15,7 +15,7 @@ namespace AmeCapture.Infrastructure.Database
             var connection = new SqliteConnection(_connectionString);
             await connection.OpenAsync();
 
-            using var cmd = connection.CreateCommand();
+            using SqliteCommand cmd = connection.CreateCommand();
             cmd.CommandText = "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;";
             _ = await cmd.ExecuteNonQueryAsync();
 
