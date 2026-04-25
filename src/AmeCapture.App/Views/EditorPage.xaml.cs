@@ -42,12 +42,19 @@ public partial class EditorPage : ContentPage, IQueryAttributable
 
     private async Task LoadItemAsync(string itemId)
     {
-        Serilog.Log.Debug("EditorPage.LoadItemAsync: itemId={ItemId}", itemId);
-        var item = await _workspaceRepository.GetByIdAsync(itemId);
-        if (item != null)
-            _viewModel.LoadItem(item);
-        else
-            Serilog.Log.Warning("EditorPage.LoadItemAsync: item not found {ItemId}", itemId);
+        try
+        {
+            Serilog.Log.Debug("EditorPage.LoadItemAsync: itemId={ItemId}", itemId);
+            var item = await _workspaceRepository.GetByIdAsync(itemId);
+            if (item != null)
+                _viewModel.LoadItem(item);
+            else
+                Serilog.Log.Warning("EditorPage.LoadItemAsync: item not found {ItemId}", itemId);
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "Failed to load item {ItemId}", itemId);
+        }
     }
 
     private void LoadImage()
