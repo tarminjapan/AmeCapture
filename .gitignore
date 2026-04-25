@@ -1,17 +1,6 @@
-# Dependencies
-node_modules/
-
-# Build output
-dist/
-dist-ssr/
-tsconfig.tsbuildinfo
-
-# Rust / Cargo
-src-tauri/target/
-
 # .NET
-src-dotnet/**/bin/
-src-dotnet/**/obj/
+**/bin/
+**/obj/
 *.user
 *.suo
 
@@ -34,21 +23,9 @@ Thumbs.db
 
 # Logs
 *.log
-npm-debug.log*
-lint-errors.txt
 
 # Editor
 *.sublime-project
 *.sublime-workspace
-
-# Old C# project files (kept for reference but not built)
-# *.sln
-# *.csproj
-
-# Tauri
-src-tauri/Cargo.lock
-
-# simple-git-hooks
-.simple-git-hooks*
 
 Note.md

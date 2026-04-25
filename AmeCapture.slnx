@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/AmeCapture.App/AmeCapture.App.csproj" />
+  <Project Path="src/AmeCapture.Application/AmeCapture.Application.csproj" />
+  <Project Path="src/AmeCapture.Domain/AmeCapture.Domain.csproj" />
+  <Project Path="src/AmeCapture.Infrastructure/AmeCapture.Infrastructure.csproj" />
+  <Project Path="tests/AmeCapture.Tests/AmeCapture.Tests.csproj" />
+</Solution>
