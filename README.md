@@ -1,6 +1,8 @@
 # AmeCapture
 
-A local screen capture application built with **.NET MAUI (C#)** and **SkiaSharp** for image editing.
+A **Windows専用**のローカルスクリーンキャプチャアプリケーション。**.NET MAUI (C#)** と **SkiaSharp** で画像編集機能を提供します。
+
+> **Note:** This application is **Windows-only**. It relies on Win32 API (P/Invoke) for screen capture, global hotkeys, system tray, and other platform features. macOS, Linux, iOS, and Android are not supported.
 
 ## Architecture
 

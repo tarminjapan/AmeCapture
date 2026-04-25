@@ -35,28 +35,49 @@ public partial class EditorPage : ContentPage, IQueryAttributable
     {
         if (query.TryGetValue("itemId", out var itemIdObj) && itemIdObj is string itemId)
         {
+            Serilog.Log.Debug("EditorPage.ApplyQueryAttributes: itemId={ItemId}", itemId);
             _ = LoadItemAsync(itemId);
         }
     }
 
     private async Task LoadItemAsync(string itemId)
     {
-        var item = await _workspaceRepository.GetByIdAsync(itemId);
-        if (item != null)
-            _viewModel.LoadItem(item);
+        try
+        {
+            Serilog.Log.Debug("EditorPage.LoadItemAsync: itemId={ItemId}", itemId);
+            var item = await _workspaceRepository.GetByIdAsync(itemId);
+            if (item != null)
+                _viewModel.LoadItem(item);
+            else
+                Serilog.Log.Warning("EditorPage.LoadItemAsync: item not found {ItemId}", itemId);
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "Failed to load item {ItemId}", itemId);
+        }
     }
 
     private void LoadImage()
     {
+        Serilog.Log.Debug("EditorPage.LoadImage: path={ImagePath}", _viewModel.ImagePath);
         _sourceBitmap?.Dispose();
         _sourceBitmap = null;
 
         if (string.IsNullOrEmpty(_viewModel.ImagePath) || !File.Exists(_viewModel.ImagePath))
+        {
+            Serilog.Log.Debug("EditorPage.LoadImage: image file not found or path is empty");
             return;
+        }
 
         Task.Run(() =>
         {
             var bitmap = SKBitmap.Decode(_viewModel.ImagePath);
+            if (bitmap == null)
+            {
+                Serilog.Log.Warning("EditorPage.LoadImage: failed to decode bitmap from {ImagePath}", _viewModel.ImagePath);
+                return;
+            }
+            Serilog.Log.Debug("EditorPage.LoadImage: decoded bitmap {Width}x{Height}", bitmap.Width, bitmap.Height);
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 _sourceBitmap?.Dispose();
@@ -282,6 +303,7 @@ public partial class EditorPage : ContentPage, IQueryAttributable
         {
             case SKTouchAction.Pressed:
                 _isDragging = true;
+                Serilog.Log.Debug("EditorPage.OnTouch: Pressed at ({X},{Y})", x, y);
                 _viewModel.BeginDraw(x, y);
                 e.Handled = true;
                 break;
@@ -291,6 +313,7 @@ public partial class EditorPage : ContentPage, IQueryAttributable
                 break;
             case SKTouchAction.Released when _isDragging:
                 _isDragging = false;
+                Serilog.Log.Debug("EditorPage.OnTouch: Released at ({X},{Y})", x, y);
                 _viewModel.EndDraw();
                 e.Handled = true;
                 break;
@@ -299,6 +322,7 @@ public partial class EditorPage : ContentPage, IQueryAttributable
 
     protected override void OnNavigatedFrom(NavigatedFromEventArgs args)
     {
+        Serilog.Log.Debug("EditorPage.OnNavigatedFrom");
         _sourceBitmap?.Dispose();
         _sourceBitmap = null;
         base.OnNavigatedFrom(args);

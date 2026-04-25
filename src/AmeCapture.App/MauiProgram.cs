@@ -20,7 +20,7 @@ public static class MauiProgram
             "amecapture-.log");
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)
             .Enrich.FromLogContext()
@@ -28,10 +28,14 @@ public static class MauiProgram
                 logPath,
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
         Log.Information("AmeCapture starting up");
+        Log.Debug("Log file path: {LogPath}", logPath);
+        Log.Debug("Base data path: {BasePath}", Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AmeCapture", "data"));
 
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
@@ -79,7 +83,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<ITagRepository, TagRepository>();
         builder.Services.AddSingleton<ISettingsRepository, SettingsRepository>();
 
-#if WINDOWS
         builder.Services.AddSingleton<ICaptureService, CaptureService>();
         builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
         builder.Services.AddSingleton<IWindowEnumerationService, WindowEnumerationService>();
@@ -90,7 +93,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<INotificationService, NotificationService>();
         builder.Services.AddSingleton<ITrayService, TrayService>();
         builder.Services.AddSingleton<CommunityToolkit.Mvvm.Messaging.IMessenger>(CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default);
-#endif
 
         builder.Services.AddTransient<ViewModels.WorkspaceViewModel>();
         builder.Services.AddTransient<ViewModels.EditorViewModel>();

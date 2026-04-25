@@ -1,18 +1,14 @@
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using AmeCapture.Application.Interfaces;
 using AmeCapture.Application.Models;
 
 namespace AmeCapture.Infrastructure.Services;
 
-[SupportedOSPlatform("windows")]
 public class WindowEnumerationService : IWindowEnumerationService
 {
     public async Task<IReadOnlyList<WindowInfo>> EnumerateWindowsAsync()
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            throw new PlatformNotSupportedException("Window enumeration is only supported on Windows.");
-
+        Serilog.Log.Debug("WindowEnumerationService.EnumerateWindowsAsync started");
         return await Task.Run(() =>
         {
             var windows = new List<WindowInfo>();
@@ -60,6 +56,8 @@ public class WindowEnumerationService : IWindowEnumerationService
                         bounds = (fallback.Left, fallback.Top, fallback.Right - fallback.Left, fallback.Bottom - fallback.Top);
                     }
 
+                    Serilog.Log.Debug("WindowEnumerationService: found window hwnd={Hwnd}, title={Title}, class={Class}, bounds=({X},{Y},{W},{H})", hwnd, title, className, bounds.x, bounds.y, bounds.w, bounds.h);
+
                     var list = (List<WindowInfo>)GCHandle.FromIntPtr(lParam).Target!;
                     list.Add(new WindowInfo
                     {
@@ -77,6 +75,7 @@ public class WindowEnumerationService : IWindowEnumerationService
             }
 
             windows.Sort((a, b) => string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase));
+            Serilog.Log.Debug("WindowEnumerationService: enumerated {Count} windows", windows.Count);
             return windows;
         });
     }

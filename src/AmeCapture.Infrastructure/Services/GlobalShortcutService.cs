@@ -87,12 +87,14 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
         if (msg == WM_HOTKEY)
         {
             var hotKeyId = wParam.ToInt32();
+            Serilog.Log.Debug("WM_HOTKEY received, hotKeyId={HotKeyId}", hotKeyId);
             lock (_lock)
             {
                 foreach (var info in _hotKeys.Values)
                 {
                     if (info.Id == hotKeyId)
                     {
+                        Serilog.Log.Debug("Hotkey matched, invoking callback for id={HotKeyId}", hotKeyId);
                         try
                         {
                             info.Callback?.Invoke();
@@ -112,16 +114,18 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
 
     public bool RegisterHotKey(string name, string shortcut, Action callback)
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return false;
-
+        Serilog.Log.Debug("RegisterHotKey: name={Name}, shortcut={Shortcut}", name, shortcut);
         lock (_lock)
         {
             if (_hotKeys.ContainsKey(name))
+            {
+                Serilog.Log.Debug("RegisterHotKey: unregistering existing hotkey {Name}", name);
                 UnregisterHotKey(name);
+            }
 
             var keys = ParseShortcut(shortcut);
             var id = Interlocked.Increment(ref _nextId);
+            Serilog.Log.Debug("RegisterHotKey: parsed modifiers={Modifiers}, virtualKey={VirtualKey}, id={Id}", keys.Modifiers, keys.VirtualKey, id);
 
             if (NativeMethods.RegisterHotKey(_messageWindow, id, keys.Modifiers, keys.VirtualKey))
             {
@@ -131,6 +135,7 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
                     Callback = callback,
                     Keys = keys
                 };
+                Serilog.Log.Debug("RegisterHotKey: successfully registered {Name} (id={Id})", name, id);
                 return true;
             }
             else
@@ -143,18 +148,21 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
 
     public void UnregisterHotKey(string name)
     {
+        Serilog.Log.Debug("UnregisterHotKey: name={Name}", name);
         lock (_lock)
         {
             if (_hotKeys.TryGetValue(name, out var info))
             {
                 NativeMethods.UnregisterHotKey(_messageWindow, info.Id);
                 _hotKeys.Remove(name);
+                Serilog.Log.Debug("UnregisterHotKey: unregistered {Name} (id={Id})", name, info.Id);
             }
         }
     }
 
     public void UnregisterAll()
     {
+        Serilog.Log.Debug("UnregisterAll: clearing {Count} hotkeys", _hotKeys.Count);
         lock (_lock)
         {
             foreach (var info in _hotKeys.Values)

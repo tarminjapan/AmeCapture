@@ -1,16 +1,16 @@
-using System.Runtime.Versioning;
 using AmeCapture.Application.Interfaces;
 
 namespace AmeCapture.Infrastructure.Services;
 
-[SupportedOSPlatform("windows")]
 public class ThumbnailService : IThumbnailService
 {
     public async Task<string> GenerateThumbnailAsync(string sourcePath, string thumbnailPath)
     {
+        Serilog.Log.Debug("ThumbnailService.GenerateThumbnailAsync: source={Source}, thumb={Thumb}", sourcePath, thumbnailPath);
         return await Task.Run(() =>
         {
             using var img = System.Drawing.Image.FromFile(sourcePath);
+            Serilog.Log.Debug("ThumbnailService: source image {Width}x{Height}", img.Width, img.Height);
 
             int maxDim = 256;
             int thumbW, thumbH;
@@ -38,6 +38,7 @@ public class ThumbnailService : IThumbnailService
                 Directory.CreateDirectory(dir);
 
             thumb.Save(thumbnailPath, System.Drawing.Imaging.ImageFormat.Png);
+            Serilog.Log.Debug("ThumbnailService: thumbnail saved {ThumbW}x{ThumbH} to {ThumbPath}", thumbW, thumbH, thumbnailPath);
             return thumbnailPath;
         });
     }

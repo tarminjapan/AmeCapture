@@ -74,6 +74,7 @@ public partial class EditorViewModel : ObservableObject
 
     public void LoadItem(WorkspaceItem item)
     {
+        Serilog.Log.Debug("EditorViewModel.LoadItem: ItemId={ItemId}, Path={Path}", item.Id, item.CurrentPath);
         _item = item;
         ImagePath = item.CurrentPath;
         Annotations.Clear();
@@ -86,6 +87,7 @@ public partial class EditorViewModel : ObservableObject
     public void BeginDraw(double x, double y)
     {
         if (CurrentTool == EditorTool.Select) return;
+        Serilog.Log.Debug("EditorViewModel.BeginDraw: tool={Tool}, x={X}, y={Y}", CurrentTool, x, y);
 
         PreviewAnnotation = CurrentTool switch
         {
@@ -156,6 +158,7 @@ public partial class EditorViewModel : ObservableObject
     {
         if (PreviewAnnotation == null) return;
 
+        Serilog.Log.Debug("EditorViewModel.EndDraw: annotation type={Type}", PreviewAnnotation.GetType().Name);
         PushUndoState();
         _redoStack.Clear();
 
@@ -170,6 +173,7 @@ public partial class EditorViewModel : ObservableObject
         PreviewAnnotation = null;
         IsDirty = true;
         UpdateUndoRedoState();
+        Serilog.Log.Debug("EditorViewModel.EndDraw: total annotations={Count}", Annotations.Count);
         AnnotationsChanged?.Invoke(this, EventArgs.Empty);
         RequestCanvasInvalidate?.Invoke(this, EventArgs.Empty);
     }
@@ -209,6 +213,7 @@ public partial class EditorViewModel : ObservableObject
     {
         if (_undoStack.Count == 0) return;
 
+        Serilog.Log.Debug("EditorViewModel.Undo: restoring from undo stack (depth={Depth})", _undoStack.Count);
         _redoStack.Add([.. Annotations]);
         var lastIndex = _undoStack.Count - 1;
         var previous = _undoStack[lastIndex];
@@ -227,6 +232,7 @@ public partial class EditorViewModel : ObservableObject
     {
         if (_redoStack.Count == 0) return;
 
+        Serilog.Log.Debug("EditorViewModel.Redo: restoring from redo stack (depth={Depth})", _redoStack.Count);
         _undoStack.Add([.. Annotations]);
         var lastIndex = _redoStack.Count - 1;
         var next = _redoStack[lastIndex];
@@ -243,6 +249,7 @@ public partial class EditorViewModel : ObservableObject
     [RelayCommand]
     private void SetTool(string toolName)
     {
+        Serilog.Log.Debug("EditorViewModel.SetTool: {ToolName}", toolName);
         CurrentTool = toolName switch
         {
             "Select" => EditorTool.Select,
@@ -260,11 +267,13 @@ public partial class EditorViewModel : ObservableObject
     {
         if (_editorService == null || _item == null || _storageService == null) return;
 
+        Serilog.Log.Debug("EditorViewModel.SaveAsync: ItemId={ItemId}, annotations={Count}", _item.Id, Annotations.Count);
         IsSaving = true;
         try
         {
             var filename = Path.GetFileName(_item.OriginalPath);
             var outputPath = _storageService.ResolveEditedPath(filename);
+            Serilog.Log.Debug("EditorViewModel.SaveAsync: outputPath={OutputPath}", outputPath);
 
             await _editorService.ApplyAnnotationsAsync(
                 _item.CurrentPath, outputPath, [.. Annotations]);
@@ -280,6 +289,7 @@ public partial class EditorViewModel : ObservableObject
 
             IsDirty = false;
             ImagePath = outputPath;
+            Serilog.Log.Debug("EditorViewModel.SaveAsync: save completed");
         }
         finally
         {
@@ -292,6 +302,7 @@ public partial class EditorViewModel : ObservableObject
     {
         if (_editorService == null || _item == null || _storageService == null) return;
 
+        Serilog.Log.Debug("EditorViewModel.SaveAsAsync: source ItemId={ItemId}, annotations={Count}", _item.Id, Annotations.Count);
         IsSaving = true;
         try
         {
@@ -324,6 +335,7 @@ public partial class EditorViewModel : ObservableObject
             };
 
             await _workspaceRepository!.AddAsync(newItem);
+            Serilog.Log.Debug("EditorViewModel.SaveAsAsync: new item created, ItemId={ItemId}", newItem.Id);
         }
         finally
         {
