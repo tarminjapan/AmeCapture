@@ -1,7 +1,9 @@
 using AmeCapture.Application.Interfaces;
 using AmeCapture.Application.Messages;
+using AmeCapture.Domain.Entities;
 using AmeCapture.Infrastructure.Database;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.UI;
 
 namespace AmeCapture.App
 {
@@ -32,7 +34,7 @@ namespace AmeCapture.App
                 if (platformWindow != null)
                 {
                     nint hWnd = WinRT.Interop.WindowNative.GetWindowHandle(platformWindow);
-                    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
+                    WindowId windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
                     var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
 
                     appWindow.Closing += (sender, args) =>
@@ -55,7 +57,7 @@ namespace AmeCapture.App
 
             try
             {
-                var services = Handler?.MauiContext?.Services;
+                IServiceProvider? services = Handler?.MauiContext?.Services;
                 if (services == null)
                 {
                     Serilog.Log.Warning("App.OnStart: MauiContext.Services is null");
@@ -63,7 +65,7 @@ namespace AmeCapture.App
                 }
 
                 Serilog.Log.Debug("App.OnStart: registering ExitRequestedMessage");
-                var messenger = services.GetRequiredService<IMessenger>();
+                IMessenger messenger = services.GetRequiredService<IMessenger>();
                 messenger.Register<ExitRequestedMessage>(this, (r, m) =>
                 {
                     Serilog.Log.Debug("App: ExitRequestedMessage received");
@@ -71,11 +73,11 @@ namespace AmeCapture.App
                 });
 
                 Serilog.Log.Debug("App.OnStart: initializing database");
-                var dbFactory = services.GetRequiredService<IDbConnectionFactory>();
+                IDbConnectionFactory dbFactory = services.GetRequiredService<IDbConnectionFactory>();
                 await DatabaseInitializer.InitializeAsync(dbFactory);
 
                 Serilog.Log.Debug("App.OnStart: ensuring storage directories");
-                var storageService = services.GetRequiredService<IStorageService>();
+                IStorageService storageService = services.GetRequiredService<IStorageService>();
                 await storageService.EnsureDirectoriesAsync();
 
                 Serilog.Log.Debug("App.OnStart: initializing tray and shortcuts");
@@ -87,7 +89,7 @@ namespace AmeCapture.App
                 _trayService.Initialize();
 
                 Serilog.Log.Debug("App.OnStart: loading settings and registering shortcuts");
-                var settings = await _settingsRepository.GetAsync();
+                AppSettings settings = await _settingsRepository.GetAsync();
                 await RegisterShortcutsAsync(settings);
 
                 Serilog.Log.Debug("App.OnStart: initialization complete");
@@ -98,7 +100,7 @@ namespace AmeCapture.App
             }
         }
 
-        private async Task RegisterShortcutsAsync(Domain.Entities.AppSettings settings)
+        private async Task RegisterShortcutsAsync(AppSettings settings)
         {
             if (_shortcutService == null)
             {
@@ -107,7 +109,7 @@ namespace AmeCapture.App
 
             Serilog.Log.Debug("App.RegisterShortcutsAsync: region={Region}, fullscreen={Fullscreen}, window={Window}", settings.HotkeyCaptureRegion, settings.HotkeyCaptureFullscreen, settings.HotkeyCaptureWindow);
 
-            var notificationService = Handler?.MauiContext?.Services.GetService<INotificationService>();
+            INotificationService? notificationService = Handler?.MauiContext?.Services.GetService<INotificationService>();
 
             async Task TryRegister(string name, string shortcut, string label, string type)
             {
@@ -122,7 +124,7 @@ namespace AmeCapture.App
                     Serilog.Log.Debug("App: hotkey {Name} triggered, sending CaptureRequestedMessage({Type})", name, type);
                     _ = Dispatcher.Dispatch(() =>
                     {
-                        var messenger = Handler?.MauiContext?.Services.GetService<IMessenger>();
+                        IMessenger? messenger = Handler?.MauiContext?.Services.GetService<IMessenger>();
                         _ = (messenger?.Send(new CaptureRequestedMessage(type)));
                     });
                 });

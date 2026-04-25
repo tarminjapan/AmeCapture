@@ -196,7 +196,7 @@ namespace AmeCapture.App.ViewModels
 
             if (PreviewAnnotation is CropAnnotation)
             {
-                var existingCrop = Annotations.OfType<CropAnnotation>().FirstOrDefault();
+                CropAnnotation? existingCrop = Annotations.OfType<CropAnnotation>().FirstOrDefault();
                 if (existingCrop != null)
                 {
                     _ = Annotations.Remove(existingCrop);
@@ -222,7 +222,7 @@ namespace AmeCapture.App.ViewModels
             PushUndoState();
             _redoStack.Clear();
 
-            var annotation = textAnn with { Text = text };
+            TextAnnotation annotation = textAnn with { Text = text };
             Annotations.Add(annotation);
             PreviewAnnotation = null;
             IsDirty = true;
@@ -233,7 +233,7 @@ namespace AmeCapture.App.ViewModels
 
         public void RemoveAnnotation(string id)
         {
-            var annotation = Annotations.FirstOrDefault(a => a.Id == id);
+            Annotation? annotation = Annotations.FirstOrDefault(a => a.Id == id);
             if (annotation == null)
             {
                 return;
@@ -259,10 +259,10 @@ namespace AmeCapture.App.ViewModels
             Serilog.Log.Debug("EditorViewModel.Undo: restoring from undo stack (depth={Depth})", _undoStack.Count);
             _redoStack.Add([.. Annotations]);
             int lastIndex = _undoStack.Count - 1;
-            var previous = _undoStack[lastIndex];
+            IReadOnlyList<Annotation> previous = _undoStack[lastIndex];
             _undoStack.RemoveAt(lastIndex);
             Annotations.Clear();
-            foreach (var a in previous)
+            foreach (Annotation a in previous)
             {
                 Annotations.Add(a);
             }
@@ -284,10 +284,10 @@ namespace AmeCapture.App.ViewModels
             Serilog.Log.Debug("EditorViewModel.Redo: restoring from redo stack (depth={Depth})", _redoStack.Count);
             _undoStack.Add([.. Annotations]);
             int lastIndex = _redoStack.Count - 1;
-            var next = _redoStack[lastIndex];
+            IReadOnlyList<Annotation> next = _redoStack[lastIndex];
             _redoStack.RemoveAt(lastIndex);
             Annotations.Clear();
-            foreach (var a in next)
+            foreach (Annotation a in next)
             {
                 Annotations.Add(a);
             }

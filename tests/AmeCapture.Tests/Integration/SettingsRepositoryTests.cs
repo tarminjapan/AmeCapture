@@ -41,7 +41,7 @@ namespace AmeCapture.Tests.Integration
         [Fact]
         public async Task GetAsync_EmptyDb_ReturnsDefaultSettings()
         {
-            var settings = await _repo.GetAsync();
+            AppSettings settings = await _repo.GetAsync();
 
             Assert.Equal(string.Empty, settings.SavePath);
             Assert.Equal("png", settings.ImageFormat);
@@ -65,7 +65,7 @@ namespace AmeCapture.Tests.Integration
             };
 
             await _repo.SaveAsync(settings);
-            var loaded = await _repo.GetAsync();
+            AppSettings loaded = await _repo.GetAsync();
 
             Assert.Equal(@"C:\Users\user\Pictures\AmeCapture", loaded.SavePath);
             Assert.Equal("jpg", loaded.ImageFormat);
@@ -84,7 +84,7 @@ namespace AmeCapture.Tests.Integration
             settings.SavePath = "/updated";
             await _repo.SaveAsync(settings);
 
-            var loaded = await _repo.GetAsync();
+            AppSettings loaded = await _repo.GetAsync();
             Assert.Equal("/updated", loaded.SavePath);
         }
     }

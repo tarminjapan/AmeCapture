@@ -1,3 +1,4 @@
+using System.Data.Common;
 using AmeCapture.Application.Interfaces;
 
 namespace AmeCapture.Infrastructure.Database
@@ -7,9 +8,9 @@ namespace AmeCapture.Infrastructure.Database
         public static async Task InitializeAsync(IDbConnectionFactory connectionFactory)
         {
             Serilog.Log.Debug("DatabaseInitializer.InitializeAsync started");
-            using var connection = await connectionFactory.CreateConnectionAsync();
-            using var transaction = await connection.BeginTransactionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await connectionFactory.CreateConnectionAsync();
+            using DbTransaction transaction = await connection.BeginTransactionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = @"
             CREATE TABLE IF NOT EXISTS workspace_items (

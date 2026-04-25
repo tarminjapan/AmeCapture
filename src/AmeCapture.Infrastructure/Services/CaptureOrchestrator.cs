@@ -32,7 +32,7 @@ namespace AmeCapture.Infrastructure.Services
             string thumbPath = _storageService.ResolveThumbnailPath(filename);
             Serilog.Log.Debug("Paths resolved - original={OriginalPath}, edited={EditedPath}, thumb={ThumbPath}", originalPath, editedPath, thumbPath);
 
-            var captureResult = await _captureService.CaptureFullScreenAsync(originalPath);
+            CaptureResult captureResult = await _captureService.CaptureFullScreenAsync(originalPath);
             Serilog.Log.Debug("Capture result: {Width}x{Height}", captureResult.Width, captureResult.Height);
 
             File.Copy(originalPath, editedPath, overwrite: true);
@@ -75,7 +75,7 @@ namespace AmeCapture.Infrastructure.Services
             string editedPath = _storageService.ResolveEditedPath(filename);
             string thumbPath = _storageService.ResolveThumbnailPath(filename);
 
-            var captureResult = await _captureService.CaptureWindowAsync(hwnd, originalPath);
+            CaptureResult captureResult = await _captureService.CaptureWindowAsync(hwnd, originalPath);
             Serilog.Log.Debug("Window capture result: {Width}x{Height}", captureResult.Width, captureResult.Height);
 
             File.Copy(originalPath, editedPath, overwrite: true);
@@ -111,7 +111,7 @@ namespace AmeCapture.Infrastructure.Services
             string tempPath = Path.Combine(tempDir, $"amecapture_region_{Guid.NewGuid():N}.png");
             Serilog.Log.Debug("Region temp path: {TempPath}", tempPath);
 
-            var captureResult = await _captureService.CaptureFullScreenAsync(tempPath);
+            CaptureResult captureResult = await _captureService.CaptureFullScreenAsync(tempPath);
             Serilog.Log.Debug("Region capture prepared: {Width}x{Height}", captureResult.Width, captureResult.Height);
 
             return new RegionCaptureInfo
@@ -207,7 +207,7 @@ namespace AmeCapture.Infrastructure.Services
         public async Task<IReadOnlyList<WindowInfo>> PrepareWindowCaptureAsync()
         {
             Serilog.Log.Debug("CaptureOrchestrator.PrepareWindowCaptureAsync started");
-            var windows = await _windowEnumerationService.EnumerateWindowsAsync();
+            IReadOnlyList<WindowInfo> windows = await _windowEnumerationService.EnumerateWindowsAsync();
             Serilog.Log.Debug("PrepareWindowCaptureAsync: found {Count} windows", windows.Count);
             return windows;
         }

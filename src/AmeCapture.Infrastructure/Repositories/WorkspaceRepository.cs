@@ -12,8 +12,8 @@ namespace AmeCapture.Infrastructure.Repositories
         public async Task<IReadOnlyList<WorkspaceItem>> GetAllAsync()
         {
             Serilog.Log.Debug("WorkspaceRepository.GetAllAsync");
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             SELECT id, type, original_path, current_path, thumbnail_path,
                    title, created_at, updated_at, is_favorite, metadata_json
@@ -21,7 +21,7 @@ namespace AmeCapture.Infrastructure.Repositories
             ORDER BY created_at DESC";
 
             var items = new List<WorkspaceItem>();
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 items.Add(ReadWorkspaceItem(reader));
@@ -34,18 +34,18 @@ namespace AmeCapture.Infrastructure.Repositories
         public async Task<WorkspaceItem?> GetByIdAsync(string id)
         {
             Serilog.Log.Debug("WorkspaceRepository.GetByIdAsync: {ItemId}", id);
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             SELECT id, type, original_path, current_path, thumbnail_path,
                    title, created_at, updated_at, is_favorite, metadata_json
             FROM workspace_items WHERE id = @id";
             AddParameter(command, "@id", id);
 
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                var item = ReadWorkspaceItem(reader);
+                WorkspaceItem item = ReadWorkspaceItem(reader);
                 Serilog.Log.Debug("WorkspaceRepository.GetByIdAsync: found item {ItemId}", id);
                 return item;
             }
@@ -57,8 +57,8 @@ namespace AmeCapture.Infrastructure.Repositories
         public async Task AddAsync(WorkspaceItem item)
         {
             Serilog.Log.Debug("WorkspaceRepository.AddAsync: {ItemId}, title={Title}", item.Id, item.Title);
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             INSERT INTO workspace_items
                 (id, type, original_path, current_path, thumbnail_path,
@@ -84,8 +84,8 @@ namespace AmeCapture.Infrastructure.Repositories
         public async Task UpdateAsync(WorkspaceItem item)
         {
             Serilog.Log.Debug("WorkspaceRepository.UpdateAsync: {ItemId}", item.Id);
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             UPDATE workspace_items SET
                 type = @type, original_path = @original_path, current_path = @current_path,
@@ -110,8 +110,8 @@ namespace AmeCapture.Infrastructure.Repositories
         public async Task DeleteAsync(string id)
         {
             Serilog.Log.Debug("WorkspaceRepository.DeleteAsync: {ItemId}", id);
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = "DELETE FROM workspace_items WHERE id = @id";
             AddParameter(command, "@id", id);
 
@@ -127,8 +127,8 @@ namespace AmeCapture.Infrastructure.Repositories
                 return [];
             }
 
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText = @"
             SELECT id, type, original_path, current_path, thumbnail_path,
                    title, created_at, updated_at, is_favorite, metadata_json
@@ -136,7 +136,7 @@ namespace AmeCapture.Infrastructure.Repositories
             AddParameter(command, "@ids", JsonSerializer.Serialize(idList));
 
             var items = new List<WorkspaceItem>();
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 items.Add(ReadWorkspaceItem(reader));
@@ -170,7 +170,7 @@ namespace AmeCapture.Infrastructure.Repositories
 
         private static void AddParameter(DbCommand command, string name, object value)
         {
-            var param = command.CreateParameter();
+            DbParameter param = command.CreateParameter();
             param.ParameterName = name;
             param.Value = value;
             _ = command.Parameters.Add(param);

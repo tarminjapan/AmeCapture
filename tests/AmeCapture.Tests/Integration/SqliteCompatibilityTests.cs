@@ -1,3 +1,4 @@
+using System.Data.Common;
 using AmeCapture.Domain.Entities;
 using AmeCapture.Infrastructure.Database;
 using AmeCapture.Infrastructure.Repositories;
@@ -43,13 +44,13 @@ namespace AmeCapture.Tests.Integration
         [Fact]
         public async Task DatabaseInitializer_CreatesAllTables()
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText =
                 "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name";
 
             var tables = new List<string>();
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 tables.Add(reader.GetString(0));
@@ -64,13 +65,13 @@ namespace AmeCapture.Tests.Integration
         [Fact]
         public async Task DatabaseInitializer_CreatesIndexes()
         {
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText =
                 "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%' ORDER BY name";
 
             var indexes = new List<string>();
-            using var reader = await command.ExecuteReaderAsync();
+            using DbDataReader reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 indexes.Add(reader.GetString(0));
@@ -86,8 +87,8 @@ namespace AmeCapture.Tests.Integration
             await DatabaseInitializer.InitializeAsync(_connectionFactory);
             await DatabaseInitializer.InitializeAsync(_connectionFactory);
 
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText =
                 "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
             long count = Convert.ToInt64(await command.ExecuteScalarAsync());
@@ -115,12 +116,12 @@ namespace AmeCapture.Tests.Integration
             await _tagRepo.AddAsync(new Tag { Id = "t1", Name = "tag1" });
             await _tagRepo.AddTagToItemAsync("w1", "t1");
 
-            var tags = await _tagRepo.GetTagsForItemAsync("w1");
+            IReadOnlyList<Tag> tags = await _tagRepo.GetTagsForItemAsync("w1");
             _ = Assert.Single(tags);
 
             await _workspaceRepo.DeleteAsync("w1");
 
-            var tagsAfterDelete = await _tagRepo.GetTagsForItemAsync("w1");
+            IReadOnlyList<Tag> tagsAfterDelete = await _tagRepo.GetTagsForItemAsync("w1");
             Assert.Empty(tagsAfterDelete);
         }
 
@@ -129,8 +130,8 @@ namespace AmeCapture.Tests.Integration
         {
             await _workspaceRepo.AddAsync(CreateSampleItem("w1"));
 
-            using var connection = await _connectionFactory.CreateConnectionAsync();
-            using var command = connection.CreateCommand();
+            using DbConnection connection = await _connectionFactory.CreateConnectionAsync();
+            using DbCommand command = connection.CreateCommand();
             command.CommandText =
                 "INSERT INTO workspace_item_tags (workspace_item_id, tag_id) VALUES ('w1', 'nonexistent')";
 

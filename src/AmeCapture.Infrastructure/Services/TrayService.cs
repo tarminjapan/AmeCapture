@@ -83,7 +83,7 @@ namespace AmeCapture.Infrastructure.Services
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                var window = Microsoft.Maui.Controls.Application.Current?.Windows[0];
+                Window? window = Microsoft.Maui.Controls.Application.Current?.Windows[0];
                 if (window != null)
                 {
                     var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
@@ -101,7 +101,7 @@ namespace AmeCapture.Infrastructure.Services
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                var window = Microsoft.Maui.Controls.Application.Current?.Windows[0];
+                Window? window = Microsoft.Maui.Controls.Application.Current?.Windows[0];
                 if (window != null)
                 {
                     var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;

@@ -15,11 +15,11 @@ namespace AmeCapture.Infrastructure.Services
 
             await Task.Run(() =>
             {
-                using var original = SKBitmap.Decode(sourcePath) ?? throw new InvalidOperationException($"Failed to load image: {sourcePath}");
+                using SKBitmap original = SKBitmap.Decode(sourcePath) ?? throw new InvalidOperationException($"Failed to load image: {sourcePath}");
 
                 Serilog.Log.Debug("SkiaSharpEditorService: source image decoded, {Width}x{Height}", original.Width, original.Height);
 
-                var cropAnnotation = annotations.OfType<CropAnnotation>().FirstOrDefault();
+                CropAnnotation? cropAnnotation = annotations.OfType<CropAnnotation>().FirstOrDefault();
 
                 SKBitmap workingBitmap;
                 double offsetX = 0, offsetY = 0;
@@ -37,7 +37,7 @@ namespace AmeCapture.Infrastructure.Services
                 }
 
                 using var surface = SKSurface.Create(new SKImageInfo(workingBitmap.Width, workingBitmap.Height));
-                var canvas = surface.Canvas;
+                SKCanvas canvas = surface.Canvas;
 
                 using (var paint = new SKPaint())
                 {
@@ -45,7 +45,7 @@ namespace AmeCapture.Infrastructure.Services
                     canvas.DrawBitmap(workingBitmap, 0, 0, paint);
                 }
 
-                foreach (var annotation in annotations)
+                foreach (Annotation annotation in annotations)
                 {
                     Serilog.Log.Debug("SkiaSharpEditorService: applying annotation type={Type}", annotation.GetType().Name);
                     switch (annotation)
@@ -88,15 +88,15 @@ namespace AmeCapture.Infrastructure.Services
                     }
                 }
 
-                using var image = surface.Snapshot();
-                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+                using SKImage image = surface.Snapshot();
+                using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
                 string? dir = Path.GetDirectoryName(outputPath);
                 if (!string.IsNullOrEmpty(dir))
                 {
                     _ = Directory.CreateDirectory(dir);
                 }
 
-                using var stream = File.Create(outputPath);
+                using FileStream stream = File.Create(outputPath);
                 data.SaveTo(stream);
 
                 workingBitmap.Dispose();
@@ -126,7 +126,7 @@ namespace AmeCapture.Infrastructure.Services
 
         private static void DrawArrow(SKCanvas canvas, ArrowAnnotation arrow)
         {
-            var color = ParseColor(arrow.StrokeColor);
+            SKColor color = ParseColor(arrow.StrokeColor);
             int width = Math.Max(1, arrow.StrokeWidth);
 
             using var linePaint = new SKPaint
@@ -171,7 +171,7 @@ namespace AmeCapture.Infrastructure.Services
 
         private static void DrawRectangle(SKCanvas canvas, RectangleAnnotation rect)
         {
-            var color = ParseColor(rect.StrokeColor);
+            SKColor color = ParseColor(rect.StrokeColor);
             int width = Math.Max(1, rect.StrokeWidth);
 
             using var paint = new SKPaint
@@ -263,7 +263,7 @@ namespace AmeCapture.Infrastructure.Services
 
         private static void DrawText(SKCanvas canvas, TextAnnotation text)
         {
-            var color = ParseColor(text.StrokeColor);
+            SKColor color = ParseColor(text.StrokeColor);
 
             using var font = new SKFont
             {

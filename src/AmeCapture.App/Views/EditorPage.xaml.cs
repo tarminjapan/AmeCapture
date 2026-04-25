@@ -47,7 +47,7 @@ namespace AmeCapture.App.Views
             try
             {
                 Serilog.Log.Debug("EditorPage.LoadItemAsync: itemId={ItemId}", itemId);
-                var item = await _workspaceRepository.GetByIdAsync(itemId);
+                WorkspaceItem? item = await _workspaceRepository.GetByIdAsync(itemId);
                 if (item != null)
                 {
                     _viewModel.LoadItem(item);
@@ -95,7 +95,7 @@ namespace AmeCapture.App.Views
 
         private void OnPaintSurface(object? sender, SKPaintSurfaceEventArgs e)
         {
-            var canvas = e.Surface.Canvas;
+            SKCanvas canvas = e.Surface.Canvas;
             canvas.Clear(SKColors.White);
 
             if (_sourceBitmap == null)
@@ -115,7 +115,7 @@ namespace AmeCapture.App.Views
                 canvas.DrawBitmap(_sourceBitmap, 0, 0, paint);
             }
 
-            foreach (var annotation in _viewModel.Annotations)
+            foreach (Annotation annotation in _viewModel.Annotations)
             {
                 DrawAnnotation(canvas, annotation, _sourceBitmap.Width, _sourceBitmap.Height);
             }
@@ -154,7 +154,7 @@ namespace AmeCapture.App.Views
 
         private static void DrawArrow(SKCanvas canvas, ArrowAnnotation arrow)
         {
-            var color = ParseColor(arrow.StrokeColor);
+            SKColor color = ParseColor(arrow.StrokeColor);
             using var paint = new SKPaint
             {
                 Color = color,
@@ -193,7 +193,7 @@ namespace AmeCapture.App.Views
 
         private static void DrawRectangle(SKCanvas canvas, RectangleAnnotation rect)
         {
-            var color = ParseColor(rect.StrokeColor);
+            SKColor color = ParseColor(rect.StrokeColor);
             using var paint = new SKPaint
             {
                 Color = color,
@@ -237,7 +237,7 @@ namespace AmeCapture.App.Views
 
         private static void DrawText(SKCanvas canvas, TextAnnotation text)
         {
-            var color = ParseColor(text.StrokeColor);
+            SKColor color = ParseColor(text.StrokeColor);
             using var font = new SKFont
             {
                 Size = (float)text.FontSize,
@@ -250,7 +250,7 @@ namespace AmeCapture.App.Views
                 Style = SKPaintStyle.Fill,
             };
 
-            var metrics = font.Metrics;
+            SKFontMetrics metrics = font.Metrics;
             float baselineOffset = -metrics.Ascent;
             float lineHeight = metrics.Descent - metrics.Ascent + metrics.Leading;
 

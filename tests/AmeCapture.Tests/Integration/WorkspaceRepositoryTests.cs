@@ -58,10 +58,10 @@ namespace AmeCapture.Tests.Integration
         [Fact]
         public async Task AddAndGetById_ReturnsItem()
         {
-            var item = CreateSampleItem("id-1");
+            WorkspaceItem item = CreateSampleItem("id-1");
             await _repo.AddAsync(item);
 
-            var found = await _repo.GetByIdAsync("id-1");
+            WorkspaceItem? found = await _repo.GetByIdAsync("id-1");
 
             Assert.NotNull(found);
             Assert.Equal("id-1", found.Id);
@@ -76,14 +76,14 @@ namespace AmeCapture.Tests.Integration
         [Fact]
         public async Task GetById_NotFound_ReturnsNull()
         {
-            var result = await _repo.GetByIdAsync("nonexistent");
+            WorkspaceItem? result = await _repo.GetByIdAsync("nonexistent");
             Assert.Null(result);
         }
 
         [Fact]
         public async Task GetAll_Empty_ReturnsEmptyList()
         {
-            var items = await _repo.GetAllAsync();
+            IReadOnlyList<WorkspaceItem> items = await _repo.GetAllAsync();
             Assert.Empty(items);
         }
 
@@ -94,14 +94,14 @@ namespace AmeCapture.Tests.Integration
             await _repo.AddAsync(CreateSampleItem("id-2"));
             await _repo.AddAsync(CreateSampleItem("id-3"));
 
-            var items = await _repo.GetAllAsync();
+            IReadOnlyList<WorkspaceItem> items = await _repo.GetAllAsync();
             Assert.Equal(3, items.Count);
         }
 
         [Fact]
         public async Task Update_ModifiesItem()
         {
-            var item = CreateSampleItem("id-1");
+            WorkspaceItem item = CreateSampleItem("id-1");
             await _repo.AddAsync(item);
 
             item.Title = "Updated Title";
@@ -109,7 +109,7 @@ namespace AmeCapture.Tests.Integration
             item.UpdatedAt = "2026-01-02T00:00:00Z";
             await _repo.UpdateAsync(item);
 
-            var found = await _repo.GetByIdAsync("id-1");
+            WorkspaceItem? found = await _repo.GetByIdAsync("id-1");
             Assert.NotNull(found);
             Assert.Equal("Updated Title", found.Title);
             Assert.True(found.IsFavorite);
@@ -135,11 +135,11 @@ namespace AmeCapture.Tests.Integration
         [Fact]
         public async Task VideoType_Roundtrips()
         {
-            var item = CreateSampleItem("id-v1");
+            WorkspaceItem item = CreateSampleItem("id-v1");
             item.ItemType = WorkspaceItemType.Video;
             await _repo.AddAsync(item);
 
-            var found = await _repo.GetByIdAsync("id-v1");
+            WorkspaceItem? found = await _repo.GetByIdAsync("id-v1");
             Assert.NotNull(found);
             Assert.Equal(WorkspaceItemType.Video, found.ItemType);
         }
@@ -162,7 +162,7 @@ namespace AmeCapture.Tests.Integration
             };
             await _repo.AddAsync(item);
 
-            var found = await _repo.GetByIdAsync("id-opt");
+            WorkspaceItem? found = await _repo.GetByIdAsync("id-opt");
             Assert.NotNull(found);
             Assert.Null(found.ThumbnailPath);
             Assert.Null(found.MetadataJson);
@@ -175,7 +175,7 @@ namespace AmeCapture.Tests.Integration
             await _repo.AddAsync(CreateSampleItem("id-2"));
             await _repo.AddAsync(CreateSampleItem("id-3"));
 
-            var items = await _repo.GetByIdsAsync(["id-1", "id-3"]);
+            IReadOnlyList<WorkspaceItem> items = await _repo.GetByIdsAsync(["id-1", "id-3"]);
             Assert.Equal(2, items.Count);
             Assert.All(items, i => Assert.True(i.Id is "id-1" or "id-3"));
         }
@@ -183,7 +183,7 @@ namespace AmeCapture.Tests.Integration
         [Fact]
         public async Task GetByIds_Empty_ReturnsEmptyList()
         {
-            var items = await _repo.GetByIdsAsync([]);
+            IReadOnlyList<WorkspaceItem> items = await _repo.GetByIdsAsync([]);
             Assert.Empty(items);
         }
     }

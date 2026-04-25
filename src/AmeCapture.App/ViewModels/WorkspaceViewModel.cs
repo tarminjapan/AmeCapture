@@ -92,9 +92,9 @@ namespace AmeCapture.App.ViewModels
             Serilog.Log.Debug("WorkspaceViewModel.LoadItemsAsync started");
             try
             {
-                var items = await _workspaceRepository.GetAllAsync();
+                IReadOnlyList<WorkspaceItem> items = await _workspaceRepository.GetAllAsync();
                 Items.Clear();
-                foreach (var item in items.OrderByDescending(i => i.CreatedAt))
+                foreach (WorkspaceItem? item in items.OrderByDescending(i => i.CreatedAt))
                 {
                     Items.Add(item);
                 }
@@ -119,7 +119,7 @@ namespace AmeCapture.App.ViewModels
             IsCapturing = true;
             try
             {
-                var item = await _captureOrchestrator.CaptureFullScreenAsync();
+                WorkspaceItem item = await _captureOrchestrator.CaptureFullScreenAsync();
                 Items.Insert(0, item);
                 Serilog.Log.Debug("WorkspaceViewModel: fullscreen capture item added, ItemId={ItemId}", item.Id);
                 await NotifyCaptureCompleteAsync(item);
@@ -146,7 +146,7 @@ namespace AmeCapture.App.ViewModels
             IsCapturing = true;
             try
             {
-                var item = await _captureOrchestrator.CaptureWindowAsync(hwnd);
+                WorkspaceItem item = await _captureOrchestrator.CaptureWindowAsync(hwnd);
                 Items.Insert(0, item);
                 IsWindowSelectionMode = false;
                 Serilog.Log.Debug("WorkspaceViewModel: window capture item added, ItemId={ItemId}", item.Id);
@@ -199,7 +199,7 @@ namespace AmeCapture.App.ViewModels
             IsCapturing = true;
             try
             {
-                var item = await _captureOrchestrator.FinalizeRegionCaptureAsync(
+                WorkspaceItem item = await _captureOrchestrator.FinalizeRegionCaptureAsync(
                     RegionCaptureInfo.TempPath, region);
                 Items.Insert(0, item);
                 RegionCaptureInfo = null;
@@ -247,9 +247,9 @@ namespace AmeCapture.App.ViewModels
             IsCapturing = true;
             try
             {
-                var windows = await _captureOrchestrator.PrepareWindowCaptureAsync();
+                IReadOnlyList<WindowInfo> windows = await _captureOrchestrator.PrepareWindowCaptureAsync();
                 Windows.Clear();
-                foreach (var w in windows)
+                foreach (WindowInfo w in windows)
                 {
                     Windows.Add(w);
                 }

@@ -37,7 +37,7 @@ namespace AmeCapture.Infrastructure.Services
 
                     while (_running)
                     {
-                        if (NativeMethods.PeekMessage(out var msg, IntPtr.Zero, 0, 0, 1))
+                        if (NativeMethods.PeekMessage(out Msg msg, IntPtr.Zero, 0, 0, 1))
                         {
                             _ = NativeMethods.TranslateMessage(ref msg);
                             _ = NativeMethods.DispatchMessage(ref msg);
@@ -66,7 +66,7 @@ namespace AmeCapture.Infrastructure.Services
             try
             {
                 var delayTask = Task.Delay(TimeSpan.FromSeconds(5));
-                var completedTask = await Task.WhenAny(_initTcs.Task, delayTask);
+                Task completedTask = await Task.WhenAny(_initTcs.Task, delayTask);
                 if (completedTask == delayTask)
                 {
                     Serilog.Log.Error("GlobalShortcutService initialization timed out");
@@ -92,7 +92,7 @@ namespace AmeCapture.Infrastructure.Services
                 Serilog.Log.Debug("WM_HOTKEY received, hotKeyId={HotKeyId}", hotKeyId);
                 lock (_lock)
                 {
-                    foreach (var info in _hotKeys.Values)
+                    foreach (HotKeyInfo info in _hotKeys.Values)
                     {
                         if (info.Id == hotKeyId)
                         {
@@ -125,7 +125,7 @@ namespace AmeCapture.Infrastructure.Services
                     UnregisterHotKey(name);
                 }
 
-                var keys = ParseShortcut(shortcut);
+                (int Modifiers, int VirtualKey) keys = ParseShortcut(shortcut);
                 int id = Interlocked.Increment(ref _nextId);
                 Serilog.Log.Debug("RegisterHotKey: parsed modifiers={Modifiers}, virtualKey={VirtualKey}, id={Id}", keys.Modifiers, keys.VirtualKey, id);
 
@@ -153,7 +153,7 @@ namespace AmeCapture.Infrastructure.Services
             Serilog.Log.Debug("UnregisterHotKey: name={Name}", name);
             lock (_lock)
             {
-                if (_hotKeys.TryGetValue(name, out var info))
+                if (_hotKeys.TryGetValue(name, out HotKeyInfo? info))
                 {
                     _ = NativeMethods.UnregisterHotKey(_messageWindow, info.Id);
                     _ = _hotKeys.Remove(name);
@@ -167,7 +167,7 @@ namespace AmeCapture.Infrastructure.Services
             Serilog.Log.Debug("UnregisterAll: clearing {Count} hotkeys", _hotKeys.Count);
             lock (_lock)
             {
-                foreach (var info in _hotKeys.Values)
+                foreach (HotKeyInfo info in _hotKeys.Values)
                 {
                     _ = NativeMethods.UnregisterHotKey(_messageWindow, info.Id);
                 }

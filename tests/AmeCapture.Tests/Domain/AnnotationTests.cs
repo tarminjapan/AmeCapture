@@ -142,7 +142,7 @@ namespace AmeCapture.Tests.Domain
                 StrokeWidth = 5,
             };
 
-            var copy = original with { EndX = 150, EndY = 250 };
+            ArrowAnnotation copy = original with { EndX = 150, EndY = 250 };
 
             Assert.Equal(10, copy.StartX);
             Assert.Equal(20, copy.StartY);
