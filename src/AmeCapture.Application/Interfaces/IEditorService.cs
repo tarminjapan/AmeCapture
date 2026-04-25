@@ -1,8 +1,9 @@
 using AmeCapture.Domain.Entities;
 
-namespace AmeCapture.Application.Interfaces;
-
-public interface IEditorService
+namespace AmeCapture.Application.Interfaces
 {
-    Task ApplyAnnotationsAsync(string sourcePath, string outputPath, IReadOnlyList<Annotation> annotations);
+    public interface IEditorService
+    {
+        public Task ApplyAnnotationsAsync(string sourcePath, string outputPath, IReadOnlyList<Annotation> annotations);
+    }
 }

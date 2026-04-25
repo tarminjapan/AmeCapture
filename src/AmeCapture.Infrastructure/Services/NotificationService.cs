@@ -1,19 +1,19 @@
 using System.Security;
 using AmeCapture.Application.Interfaces;
 
-namespace AmeCapture.Infrastructure.Services;
-
-public class NotificationService : INotificationService
+namespace AmeCapture.Infrastructure.Services
 {
-    public Task ShowNotificationAsync(string title, string message, Action? onClick = null)
+    public class NotificationService : INotificationService
     {
-        Serilog.Log.Debug("NotificationService.ShowNotificationAsync: title={Title}, message={Message}, hasOnClick={HasOnClick}", title, message, onClick != null);
-        try
+        public Task ShowNotificationAsync(string title, string message, Action? onClick = null)
         {
-            var escapedTitle = SecurityElement.Escape(title) ?? title;
-            var escapedMessage = SecurityElement.Escape(message) ?? message;
+            Serilog.Log.Debug("NotificationService.ShowNotificationAsync: title={Title}, message={Message}, hasOnClick={HasOnClick}", title, message, onClick != null);
+            try
+            {
+                string escapedTitle = SecurityElement.Escape(title) ?? title;
+                string escapedMessage = SecurityElement.Escape(message) ?? message;
 
-            var toastXml = System.Xml.Linq.XElement.Parse($@"
+                var toastXml = System.Xml.Linq.XElement.Parse($@"
 <toast>
     <visual>
         <binding template='ToastText02'>
@@ -23,24 +23,25 @@ public class NotificationService : INotificationService
     </visual>
 </toast>");
 
-            var xml = new Windows.Data.Xml.Dom.XmlDocument();
-            xml.LoadXml(toastXml.ToString());
+                var xml = new Windows.Data.Xml.Dom.XmlDocument();
+                xml.LoadXml(toastXml.ToString());
 
-            var toastNotification = new Windows.UI.Notifications.ToastNotification(xml);
+                var toastNotification = new Windows.UI.Notifications.ToastNotification(xml);
 
-            if (onClick != null)
+                if (onClick != null)
+                {
+                    toastNotification.Activated += (s, e) => onClick();
+                }
+
+                Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier().Show(toastNotification);
+                Serilog.Log.Debug("NotificationService: notification shown successfully");
+            }
+            catch (Exception ex)
             {
-                toastNotification.Activated += (s, e) => onClick();
+                Serilog.Log.Warning(ex, "Failed to show notification");
             }
 
-            Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier().Show(toastNotification);
-            Serilog.Log.Debug("NotificationService: notification shown successfully");
+            return Task.CompletedTask;
         }
-        catch (Exception ex)
-        {
-            Serilog.Log.Warning(ex, "Failed to show notification");
-        }
-
-        return Task.CompletedTask;
     }
 }

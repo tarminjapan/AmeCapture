@@ -1,9 +1,10 @@
-namespace AmeCapture.Application.Interfaces;
-
-public interface IGlobalShortcutService
+namespace AmeCapture.Application.Interfaces
 {
-    Task InitializeAsync();
-    bool RegisterHotKey(string name, string shortcut, Action callback);
-    void UnregisterHotKey(string name);
-    void UnregisterAll();
+    public interface IGlobalShortcutService
+    {
+        public Task InitializeAsync();
+        public bool RegisterHotKey(string name, string shortcut, Action callback);
+        public void UnregisterHotKey(string name);
+        public void UnregisterAll();
+    }
 }

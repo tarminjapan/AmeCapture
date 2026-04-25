@@ -2,30 +2,24 @@ using System.Data.Common;
 using AmeCapture.Application.Interfaces;
 using Microsoft.Data.Sqlite;
 
-namespace AmeCapture.Infrastructure.Database;
-
-public class SqliteConnectionFactory : IDbConnectionFactory
+namespace AmeCapture.Infrastructure.Database
 {
-    private readonly string _connectionString;
-    private readonly string _databasePath;
-
-    public SqliteConnectionFactory(string databasePath)
+    public class SqliteConnectionFactory(string databasePath) : IDbConnectionFactory
     {
-        _databasePath = databasePath;
-        _connectionString = $"Data Source={databasePath};Pooling=False";
-    }
+        private readonly string _connectionString = $"Data Source={databasePath};Pooling=False";
 
-    public string DatabasePath => _databasePath;
+        public string DatabasePath { get; } = databasePath;
 
-    public async Task<DbConnection> CreateConnectionAsync()
-    {
-        var connection = new SqliteConnection(_connectionString);
-        await connection.OpenAsync();
+        public async Task<DbConnection> CreateConnectionAsync()
+        {
+            var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
 
-        using var cmd = connection.CreateCommand();
-        cmd.CommandText = "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;";
-        await cmd.ExecuteNonQueryAsync();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;";
+            _ = await cmd.ExecuteNonQueryAsync();
 
-        return connection;
+            return connection;
+        }
     }
 }

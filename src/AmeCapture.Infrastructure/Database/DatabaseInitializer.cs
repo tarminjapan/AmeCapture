@@ -1,17 +1,17 @@
 using AmeCapture.Application.Interfaces;
 
-namespace AmeCapture.Infrastructure.Database;
-
-public static class DatabaseInitializer
+namespace AmeCapture.Infrastructure.Database
 {
-    public static async Task InitializeAsync(IDbConnectionFactory connectionFactory)
+    public static class DatabaseInitializer
     {
-        Serilog.Log.Debug("DatabaseInitializer.InitializeAsync started");
-        using var connection = await connectionFactory.CreateConnectionAsync();
-        using var transaction = await connection.BeginTransactionAsync();
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = @"
+        public static async Task InitializeAsync(IDbConnectionFactory connectionFactory)
+        {
+            Serilog.Log.Debug("DatabaseInitializer.InitializeAsync started");
+            using var connection = await connectionFactory.CreateConnectionAsync();
+            using var transaction = await connection.BeginTransactionAsync();
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = @"
             CREATE TABLE IF NOT EXISTS workspace_items (
                 id TEXT PRIMARY KEY,
                 type TEXT NOT NULL DEFAULT 'image',
@@ -47,8 +47,9 @@ public static class DatabaseInitializer
                 ON workspace_items(created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_workspace_items_is_favorite
                 ON workspace_items(is_favorite);";
-        await command.ExecuteNonQueryAsync();
-        await transaction.CommitAsync();
-        Serilog.Log.Debug("DatabaseInitializer.InitializeAsync completed: schema created");
+            _ = await command.ExecuteNonQueryAsync();
+            await transaction.CommitAsync();
+            Serilog.Log.Debug("DatabaseInitializer.InitializeAsync completed: schema created");
+        }
     }
 }

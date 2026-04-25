@@ -1,14 +1,15 @@
 using AmeCapture.Application.Models;
 using AmeCapture.Domain.Entities;
 
-namespace AmeCapture.Application.Interfaces;
-
-public interface ICaptureOrchestrator
+namespace AmeCapture.Application.Interfaces
 {
-    Task<WorkspaceItem> CaptureFullScreenAsync();
-    Task<WorkspaceItem> CaptureWindowAsync(nint hwnd);
-    Task<RegionCaptureInfo> PrepareRegionCaptureAsync();
-    Task<WorkspaceItem> FinalizeRegionCaptureAsync(string sourcePath, CaptureRegion region);
-    Task CancelRegionCaptureAsync(string sourcePath);
-    Task<IReadOnlyList<WindowInfo>> PrepareWindowCaptureAsync();
+    public interface ICaptureOrchestrator
+    {
+        public Task<WorkspaceItem> CaptureFullScreenAsync();
+        public Task<WorkspaceItem> CaptureWindowAsync(nint hwnd);
+        public Task<RegionCaptureInfo> PrepareRegionCaptureAsync();
+        public Task<WorkspaceItem> FinalizeRegionCaptureAsync(string sourcePath, CaptureRegion region);
+        public Task CancelRegionCaptureAsync(string sourcePath);
+        public Task<IReadOnlyList<WindowInfo>> PrepareWindowCaptureAsync();
+    }
 }

@@ -1,54 +1,55 @@
 using AmeCapture.Application.Interfaces;
 
-namespace AmeCapture.Infrastructure.Services;
-
-public class ClipboardService : IClipboardService
+namespace AmeCapture.Infrastructure.Services
 {
-    public Task SetImageAsync(System.Drawing.Image image)
+    public class ClipboardService : IClipboardService
     {
-        Serilog.Log.Debug("ClipboardService.SetImageAsync started");
-        var tcs = new TaskCompletionSource();
-        var thread = new Thread(() =>
+        public Task SetImageAsync(System.Drawing.Image image)
         {
-            try
+            Serilog.Log.Debug("ClipboardService.SetImageAsync started");
+            var tcs = new TaskCompletionSource();
+            var thread = new Thread(() =>
             {
-                System.Windows.Forms.Clipboard.SetImage(image);
-                Serilog.Log.Debug("ClipboardService.SetImageAsync: image set successfully");
-                tcs.SetResult();
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Debug(ex, "ClipboardService.SetImageAsync: failed to set image");
-                tcs.SetException(ex);
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
+                try
+                {
+                    System.Windows.Forms.Clipboard.SetImage(image);
+                    Serilog.Log.Debug("ClipboardService.SetImageAsync: image set successfully");
+                    tcs.SetResult();
+                }
+                catch (Exception ex)
+                {
+                    Serilog.Log.Debug(ex, "ClipboardService.SetImageAsync: failed to set image");
+                    tcs.SetException(ex);
+                }
+            });
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
 
-        return tcs.Task;
-    }
+            return tcs.Task;
+        }
 
-    public Task SetTextAsync(string text)
-    {
-        Serilog.Log.Debug("ClipboardService.SetTextAsync started");
-        var tcs = new TaskCompletionSource();
-        var thread = new Thread(() =>
+        public Task SetTextAsync(string text)
         {
-            try
+            Serilog.Log.Debug("ClipboardService.SetTextAsync started");
+            var tcs = new TaskCompletionSource();
+            var thread = new Thread(() =>
             {
-                System.Windows.Forms.Clipboard.SetText(text);
-                Serilog.Log.Debug("ClipboardService.SetTextAsync: text set successfully");
-                tcs.SetResult();
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Debug(ex, "ClipboardService.SetTextAsync: failed to set text");
-                tcs.SetException(ex);
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
+                try
+                {
+                    System.Windows.Forms.Clipboard.SetText(text);
+                    Serilog.Log.Debug("ClipboardService.SetTextAsync: text set successfully");
+                    tcs.SetResult();
+                }
+                catch (Exception ex)
+                {
+                    Serilog.Log.Debug(ex, "ClipboardService.SetTextAsync: failed to set text");
+                    tcs.SetException(ex);
+                }
+            });
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
 
-        return tcs.Task;
+            return tcs.Task;
+        }
     }
 }

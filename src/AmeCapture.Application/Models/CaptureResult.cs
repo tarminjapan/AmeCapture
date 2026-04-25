@@ -1,8 +1,9 @@
-namespace AmeCapture.Application.Models;
-
-public class CaptureResult
+namespace AmeCapture.Application.Models
 {
-    public string FilePath { get; set; } = string.Empty;
-    public uint Width { get; set; }
-    public uint Height { get; set; }
+    public class CaptureResult
+    {
+        public string FilePath { get; set; } = string.Empty;
+        public uint Width { get; set; }
+        public uint Height { get; set; }
+    }
 }

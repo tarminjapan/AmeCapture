@@ -1,8 +1,9 @@
-namespace AmeCapture.Application.Models;
-
-public class RegionCaptureInfo
+namespace AmeCapture.Application.Models
 {
-    public string TempPath { get; set; } = string.Empty;
-    public uint ScreenWidth { get; set; }
-    public uint ScreenHeight { get; set; }
+    public class RegionCaptureInfo
+    {
+        public string TempPath { get; set; } = string.Empty;
+        public uint ScreenWidth { get; set; }
+        public uint ScreenHeight { get; set; }
+    }
 }

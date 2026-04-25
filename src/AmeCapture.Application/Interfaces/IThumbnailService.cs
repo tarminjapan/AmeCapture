@@ -1,6 +1,7 @@
-namespace AmeCapture.Application.Interfaces;
-
-public interface IThumbnailService
+namespace AmeCapture.Application.Interfaces
 {
-    Task<string> GenerateThumbnailAsync(string sourcePath, string thumbnailPath);
+    public interface IThumbnailService
+    {
+        public Task<string> GenerateThumbnailAsync(string sourcePath, string thumbnailPath);
+    }
 }

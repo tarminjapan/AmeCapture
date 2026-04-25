@@ -1,9 +1,10 @@
 using System.Data.Common;
 
-namespace AmeCapture.Application.Interfaces;
-
-public interface IDbConnectionFactory
+namespace AmeCapture.Application.Interfaces
 {
-    Task<DbConnection> CreateConnectionAsync();
-    string DatabasePath { get; }
+    public interface IDbConnectionFactory
+    {
+        public Task<DbConnection> CreateConnectionAsync();
+        public string DatabasePath { get; }
+    }
 }
