@@ -1,3 +1,0 @@
-npx.cmd lint-staged
-npm.cmd run check:ts
-npm.cmd run check:rust

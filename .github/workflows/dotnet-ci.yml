@@ -4,13 +4,15 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src-dotnet/**'
-      - '.github/workflows/dotnet-ci.yml'
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/dotnet-ci.yml"
   pull_request:
     branches: [main]
     paths:
-      - 'src-dotnet/**'
-      - '.github/workflows/dotnet-ci.yml'
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/dotnet-ci.yml"
 
 jobs:
   build:
@@ -21,16 +23,16 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
       - name: Install MAUI workload
         run: dotnet workload install maui
 
       - name: Restore dependencies
-        run: dotnet restore src-dotnet/AmeCapture.slnx
+        run: dotnet restore AmeCapture.slnx
 
       - name: Build
-        run: dotnet build src-dotnet/AmeCapture.App/AmeCapture.App.csproj -f net10.0-windows10.0.19041.0 --no-restore -warnaserror
+        run: dotnet build src/AmeCapture.App/AmeCapture.App.csproj -f net10.0-windows10.0.19041.0 --no-restore -warnaserror
 
   test:
     runs-on: windows-latest
@@ -40,16 +42,16 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
       - name: Restore dependencies
-        run: dotnet restore src-dotnet/AmeCapture.Tests/AmeCapture.Tests.csproj
+        run: dotnet restore tests/AmeCapture.Tests/AmeCapture.Tests.csproj
 
       - name: Build tests
-        run: dotnet build src-dotnet/AmeCapture.Tests/AmeCapture.Tests.csproj --no-restore
+        run: dotnet build tests/AmeCapture.Tests/AmeCapture.Tests.csproj --no-restore
 
       - name: Run tests
-        run: dotnet test src-dotnet/AmeCapture.Tests/AmeCapture.Tests.csproj --no-build --verbosity normal
+        run: dotnet test tests/AmeCapture.Tests/AmeCapture.Tests.csproj --no-build --verbosity normal
 
   lint:
     runs-on: windows-latest
@@ -59,10 +61,10 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
       - name: Install dotnet-format
         run: dotnet tool install --global dotnet-format
 
       - name: Check formatting
-        run: dotnet format src-dotnet/AmeCapture.slnx --verify-no-changes --severity warn
+        run: dotnet format AmeCapture.slnx --verify-no-changes --severity warn
