@@ -39,7 +39,7 @@ namespace AmeCapture.Infrastructure.Services
                     throw new InvalidOperationException("BitBlt failed.");
                 }
 
-                using Bitmap img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
+                using System.Drawing.Bitmap img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
                 img.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
                 Serilog.Log.Debug("Image saved to {SavePath}, size={Size} bytes", savePath, new FileInfo(savePath).Length);
 
@@ -90,7 +90,7 @@ namespace AmeCapture.Infrastructure.Services
                     throw new InvalidOperationException("BitBlt failed.");
                 }
 
-                using Bitmap img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
+                using System.Drawing.Bitmap img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
                 img.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
                 Serilog.Log.Debug("Window image saved to {SavePath}, size={Size} bytes", savePath, new FileInfo(savePath).Length);
 

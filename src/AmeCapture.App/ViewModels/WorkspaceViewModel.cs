@@ -94,7 +94,7 @@ namespace AmeCapture.App.ViewModels
             {
                 IReadOnlyList<WorkspaceItem> items = await _workspaceRepository.GetAllAsync();
                 Items.Clear();
-                foreach (WorkspaceItem? item in items.OrderByDescending(i => i.CreatedAt))
+                foreach (WorkspaceItem item in items.OrderByDescending(i => i.CreatedAt))
                 {
                     Items.Add(item);
                 }
