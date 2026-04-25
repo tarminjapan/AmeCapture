@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using AmeCapture.Application.Interfaces;
+using AmeCapture.Application.Messages;
 using CommunityToolkit.Mvvm.Messaging;
 
 namespace AmeCapture.Infrastructure.Services;
@@ -21,53 +22,62 @@ public class TrayService : ITrayService
         if (!OperatingSystem.IsWindows())
             return;
 
-        _contextMenu = new ContextMenuStrip();
-
-        var showItem = new ToolStripMenuItem("ウィンドウを表示");
-        showItem.Click += (s, e) => ShowWindow();
-        _contextMenu.Items.Add(showItem);
-
-        _contextMenu.Items.Add(new ToolStripSeparator());
-
-        var captureMenu = new ToolStripMenuItem("キャプチャ");
-        var regionItem = new ToolStripMenuItem("範囲キャプチャ");
-        regionItem.Click += (s, e) => TriggerCapture("region");
-        var fullscreenItem = new ToolStripMenuItem("全画面キャプチャ");
-        fullscreenItem.Click += (s, e) => TriggerCapture("fullscreen");
-        var windowItem = new ToolStripMenuItem("ウィンドウキャプチャ");
-        windowItem.Click += (s, e) => TriggerCapture("window");
-        captureMenu.DropDownItems.Add(regionItem);
-        captureMenu.DropDownItems.Add(fullscreenItem);
-        captureMenu.DropDownItems.Add(windowItem);
-        _contextMenu.Items.Add(captureMenu);
-
-        _contextMenu.Items.Add(new ToolStripSeparator());
-
-        var settingsItem = new ToolStripMenuItem("設定");
-        settingsItem.Click += (s, e) => ShowSettings();
-        _contextMenu.Items.Add(settingsItem);
-
-        _contextMenu.Items.Add(new ToolStripSeparator());
-
-        var exitItem = new ToolStripMenuItem("終了");
-        exitItem.Click += (s, e) => _messenger.Send(new AmeCapture.Application.Messages.ExitRequestedMessage());
-        _contextMenu.Items.Add(exitItem);
-
-        _notifyIcon = new NotifyIcon
+        try
         {
-            Icon = System.Drawing.SystemIcons.Application,
-            Visible = true,
-            Text = "AmeCapture",
-            ContextMenuStrip = _contextMenu
-        };
+            _contextMenu = new ContextMenuStrip();
 
-        _notifyIcon.MouseClick += (s, e) =>
-        {
-            if (e.Button == MouseButtons.Left)
+            var showItem = new ToolStripMenuItem("ウィンドウを表示");
+            showItem.Click += (s, e) => ShowWindow();
+            _contextMenu.Items.Add(showItem);
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
+            var captureMenu = new ToolStripMenuItem("キャプチャ");
+            var regionItem = new ToolStripMenuItem("範囲キャプチャ");
+            regionItem.Click += (s, e) => TriggerCapture("region");
+            var fullscreenItem = new ToolStripMenuItem("全画面キャプチャ");
+            fullscreenItem.Click += (s, e) => TriggerCapture("fullscreen");
+            var windowItem = new ToolStripMenuItem("ウィンドウキャプチャ");
+            windowItem.Click += (s, e) => TriggerCapture("window");
+            captureMenu.DropDownItems.Add(regionItem);
+            captureMenu.DropDownItems.Add(fullscreenItem);
+            captureMenu.DropDownItems.Add(windowItem);
+            _contextMenu.Items.Add(captureMenu);
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
+            var settingsItem = new ToolStripMenuItem("設定");
+            settingsItem.Click += (s, e) => ShowSettings();
+            _contextMenu.Items.Add(settingsItem);
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
+            var exitItem = new ToolStripMenuItem("終了");
+            exitItem.Click += (s, e) => _messenger.Send(new ExitRequestedMessage());
+            _contextMenu.Items.Add(exitItem);
+
+            _notifyIcon = new NotifyIcon
             {
-                ShowWindow();
-            }
-        };
+                Icon = System.Drawing.SystemIcons.Application,
+                Visible = true,
+                Text = "AmeCapture",
+                ContextMenuStrip = _contextMenu
+            };
+
+            _notifyIcon.MouseClick += (s, e) =>
+            {
+                if (e.Button == MouseButtons.Left)
+                {
+                    ShowWindow();
+                }
+            };
+
+            Serilog.Log.Information("TrayService initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "Failed to initialize TrayService");
+        }
     }
 
     [DllImport("user32.dll")]
@@ -117,27 +127,25 @@ public class TrayService : ITrayService
 
     public void Exit()
     {
-        _notifyIcon?.Dispose();
-        _contextMenu?.Dispose();
+        try
+        {
+            _notifyIcon?.Dispose();
+            _contextMenu?.Dispose();
+            Serilog.Log.Information("TrayService exited");
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Warning(ex, "Error during TrayService cleanup");
+        }
     }
 
     private void ShowSettings()
     {
         ShowWindow();
-        // TODO: Navigate to SettingsPage once implemented
-        // MainThread.BeginInvokeOnMainThread(async () =>
-        // {
-        //     await Shell.Current.GoToAsync("SettingsPage");
-        // });
     }
 
     private void TriggerCapture(string captureType)
     {
         _messenger.Send(new CaptureRequestedMessage(captureType));
     }
-}
-
-public class CaptureRequestedMessage(string captureType)
-{
-    public string CaptureType { get; } = captureType;
 }

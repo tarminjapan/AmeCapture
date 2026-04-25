@@ -12,6 +12,8 @@ public partial class WorkspacePage : ContentPage
         InitializeComponent();
         _viewModel = viewModel;
         BindingContext = viewModel;
+
+        _viewModel.NavigateToItemRequested += OnNavigateToItemRequested;
     }
 
     private async void OnPageLoaded(object? sender, EventArgs e)
@@ -24,11 +26,38 @@ public partial class WorkspacePage : ContentPage
         if (sender is not BindableObject bindable) return;
         if (bindable.BindingContext is not WorkspaceItem item) return;
 
+        _viewModel.SelectedItem = item;
+
         var parameters = new Dictionary<string, object>
         {
             { "itemId", item.Id },
         };
 
         await Shell.Current.GoToAsync(nameof(EditorPage), parameters);
+    }
+
+    private async void OnNavigateToItemRequested(object? sender, string itemId)
+    {
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            try
+            {
+                var parameters = new Dictionary<string, object>
+                {
+                    { "itemId", itemId },
+                };
+                await Shell.Current.GoToAsync(nameof(EditorPage), parameters);
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "Failed to navigate to item from notification");
+            }
+        });
+    }
+
+    protected override void OnNavigatedTo(NavigatedToEventArgs args)
+    {
+        base.OnNavigatedTo(args);
+        _ = _viewModel.LoadItemsAsync();
     }
 }
