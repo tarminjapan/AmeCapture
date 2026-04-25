@@ -63,8 +63,14 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Restore dependencies
+        run: dotnet restore AmeCapture.slnx
+
       - name: Install dotnet-format
         run: dotnet tool install --global dotnet-format
 
       - name: Check formatting
-        run: dotnet format AmeCapture.slnx --verify-no-changes --severity warn
+        run: dotnet format AmeCapture.slnx --verify-no-changes --severity info

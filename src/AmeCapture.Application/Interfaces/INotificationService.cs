@@ -1,6 +1,7 @@
-namespace AmeCapture.Application.Interfaces;
-
-public interface INotificationService
+namespace AmeCapture.Application.Interfaces
 {
-    Task ShowNotificationAsync(string title, string message, Action? onClick = null);
+    public interface INotificationService
+    {
+        public Task ShowNotificationAsync(string title, string message, Action? onClick = null);
+    }
 }

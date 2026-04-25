@@ -1,9 +1,10 @@
 using AmeCapture.Domain.Entities;
 
-namespace AmeCapture.Application.Interfaces;
-
-public interface ISettingsRepository
+namespace AmeCapture.Application.Interfaces
 {
-    Task<AppSettings> GetAsync();
-    Task SaveAsync(AppSettings settings);
+    public interface ISettingsRepository
+    {
+        public Task<AppSettings> GetAsync();
+        public Task SaveAsync(AppSettings settings);
+    }
 }

@@ -1,9 +1,10 @@
 using AmeCapture.Application.Models;
 
-namespace AmeCapture.Application.Interfaces;
-
-public interface ICaptureService
+namespace AmeCapture.Application.Interfaces
 {
-    Task<CaptureResult> CaptureFullScreenAsync(string savePath);
-    Task<CaptureResult> CaptureWindowAsync(nint hwnd, string savePath);
+    public interface ICaptureService
+    {
+        public Task<CaptureResult> CaptureFullScreenAsync(string savePath);
+        public Task<CaptureResult> CaptureWindowAsync(nint hwnd, string savePath);
+    }
 }

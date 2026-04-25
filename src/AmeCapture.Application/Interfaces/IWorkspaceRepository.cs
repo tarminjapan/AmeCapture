@@ -1,13 +1,14 @@
 using AmeCapture.Domain.Entities;
 
-namespace AmeCapture.Application.Interfaces;
-
-public interface IWorkspaceRepository
+namespace AmeCapture.Application.Interfaces
 {
-    Task<IReadOnlyList<WorkspaceItem>> GetAllAsync();
-    Task<WorkspaceItem?> GetByIdAsync(string id);
-    Task AddAsync(WorkspaceItem item);
-    Task UpdateAsync(WorkspaceItem item);
-    Task DeleteAsync(string id);
-    Task<IReadOnlyList<WorkspaceItem>> GetByIdsAsync(IEnumerable<string> ids);
+    public interface IWorkspaceRepository
+    {
+        public Task<IReadOnlyList<WorkspaceItem>> GetAllAsync();
+        public Task<WorkspaceItem?> GetByIdAsync(string id);
+        public Task AddAsync(WorkspaceItem item);
+        public Task UpdateAsync(WorkspaceItem item);
+        public Task DeleteAsync(string id);
+        public Task<IReadOnlyList<WorkspaceItem>> GetByIdsAsync(IEnumerable<string> ids);
+    }
 }

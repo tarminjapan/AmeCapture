@@ -1,104 +1,114 @@
 using AmeCapture.Infrastructure.Services;
 
-namespace AmeCapture.Tests.Integration;
-
-public class StorageServiceTests : IDisposable
+namespace AmeCapture.Tests.Integration
 {
-    private readonly string _tempDir;
-    private readonly StorageService _service;
-
-    public StorageServiceTests()
+    public class StorageServiceTests : IDisposable
     {
-        _tempDir = Path.Combine(Path.GetTempPath(), $"test_storage_{Guid.NewGuid():N}");
-        _service = new StorageService(_tempDir);
-    }
+        private readonly string _tempDir;
+        private readonly StorageService _service;
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempDir))
+        public StorageServiceTests()
         {
-            Directory.Delete(_tempDir, true);
+            _tempDir = Path.Combine(Path.GetTempPath(), $"test_storage_{Guid.NewGuid():N}");
+            _service = new StorageService(_tempDir);
         }
-    }
 
-    [Fact]
-    public async Task EnsureDirectoriesAsync_CreatesAllDirectories()
-    {
-        await _service.EnsureDirectoriesAsync();
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
-        Assert.True(Directory.Exists(Path.Combine(_tempDir, "originals")));
-        Assert.True(Directory.Exists(Path.Combine(_tempDir, "edited")));
-        Assert.True(Directory.Exists(Path.Combine(_tempDir, "thumbnails")));
-        Assert.True(Directory.Exists(Path.Combine(_tempDir, "videos")));
-    }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (Directory.Exists(_tempDir))
+                {
+                    Directory.Delete(_tempDir, true);
+                }
+            }
+        }
 
-    [Fact]
-    public async Task EnsureDirectoriesAsync_IsIdempotent()
-    {
-        await _service.EnsureDirectoriesAsync();
-        await _service.EnsureDirectoriesAsync();
+        [Fact]
+        public async Task EnsureDirectoriesAsync_CreatesAllDirectories()
+        {
+            await _service.EnsureDirectoriesAsync();
 
-        Assert.True(Directory.Exists(Path.Combine(_tempDir, "originals")));
-    }
+            Assert.True(Directory.Exists(Path.Combine(_tempDir, "originals")));
+            Assert.True(Directory.Exists(Path.Combine(_tempDir, "edited")));
+            Assert.True(Directory.Exists(Path.Combine(_tempDir, "thumbnails")));
+            Assert.True(Directory.Exists(Path.Combine(_tempDir, "videos")));
+        }
 
-    [Fact]
-    public void ResolveOriginalPath_ReturnsCorrectPath()
-    {
-        var path = _service.ResolveOriginalPath("a.png");
-        Assert.Equal(Path.Combine(_tempDir, "originals", "a.png"), path);
-    }
+        [Fact]
+        public async Task EnsureDirectoriesAsync_IsIdempotent()
+        {
+            await _service.EnsureDirectoriesAsync();
+            await _service.EnsureDirectoriesAsync();
 
-    [Fact]
-    public void ResolveEditedPath_ReturnsCorrectPath()
-    {
-        var path = _service.ResolveEditedPath("a.png");
-        Assert.Equal(Path.Combine(_tempDir, "edited", "a.png"), path);
-    }
+            Assert.True(Directory.Exists(Path.Combine(_tempDir, "originals")));
+        }
 
-    [Fact]
-    public void ResolveThumbnailPath_ReturnsCorrectPath()
-    {
-        var path = _service.ResolveThumbnailPath("a.png");
-        Assert.Equal(Path.Combine(_tempDir, "thumbnails", "a_thumb.png"), path);
-    }
+        [Fact]
+        public void ResolveOriginalPath_ReturnsCorrectPath()
+        {
+            string path = _service.ResolveOriginalPath("a.png");
+            Assert.Equal(Path.Combine(_tempDir, "originals", "a.png"), path);
+        }
 
-    [Fact]
-    public void ResolveVideoPath_ReturnsCorrectPath()
-    {
-        var path = _service.ResolveVideoPath("b.mp4");
-        Assert.Equal(Path.Combine(_tempDir, "videos", "b.mp4"), path);
-    }
+        [Fact]
+        public void ResolveEditedPath_ReturnsCorrectPath()
+        {
+            string path = _service.ResolveEditedPath("a.png");
+            Assert.Equal(Path.Combine(_tempDir, "edited", "a.png"), path);
+        }
 
-    [Fact]
-    public void GenerateThumbnailFilename_WithExtension()
-    {
-        Assert.Equal("capture_001_thumb.png", _service.GenerateThumbnailFilename("capture_001.png"));
-    }
+        [Fact]
+        public void ResolveThumbnailPath_ReturnsCorrectPath()
+        {
+            string path = _service.ResolveThumbnailPath("a.png");
+            Assert.Equal(Path.Combine(_tempDir, "thumbnails", "a_thumb.png"), path);
+        }
 
-    [Fact]
-    public void GenerateThumbnailFilename_Jpg()
-    {
-        Assert.Equal("screenshot_thumb.jpg", _service.GenerateThumbnailFilename("screenshot.jpg"));
-    }
+        [Fact]
+        public void ResolveVideoPath_ReturnsCorrectPath()
+        {
+            string path = _service.ResolveVideoPath("b.mp4");
+            Assert.Equal(Path.Combine(_tempDir, "videos", "b.mp4"), path);
+        }
 
-    [Fact]
-    public void GenerateThumbnailFilename_NoExtension()
-    {
-        Assert.Equal("noext_thumb", _service.GenerateThumbnailFilename("noext"));
-    }
+        [Fact]
+        public void GenerateThumbnailFilename_WithExtension()
+        {
+            Assert.Equal("capture_001_thumb.png", _service.GenerateThumbnailFilename("capture_001.png"));
+        }
 
-    [Fact]
-    public void GenerateThumbnailFilename_WithSubdirectory_StripsDirectory()
-    {
-        Assert.Equal("capture_001_thumb.png", _service.GenerateThumbnailFilename("subdir/capture_001.png"));
-    }
+        [Fact]
+        public void GenerateThumbnailFilename_Jpg()
+        {
+            Assert.Equal("screenshot_thumb.jpg", _service.GenerateThumbnailFilename("screenshot.jpg"));
+        }
 
-    [Fact]
-    public void GetDirectoryPaths_ReturnCorrectPaths()
-    {
-        Assert.Equal(Path.Combine(_tempDir, "originals"), _service.GetOriginalsDir());
-        Assert.Equal(Path.Combine(_tempDir, "edited"), _service.GetEditedDir());
-        Assert.Equal(Path.Combine(_tempDir, "thumbnails"), _service.GetThumbnailsDir());
-        Assert.Equal(Path.Combine(_tempDir, "videos"), _service.GetVideosDir());
+        [Fact]
+        public void GenerateThumbnailFilename_NoExtension()
+        {
+            Assert.Equal("noext_thumb", _service.GenerateThumbnailFilename("noext"));
+        }
+
+        [Fact]
+        public void GenerateThumbnailFilename_WithSubdirectory_StripsDirectory()
+        {
+            Assert.Equal("capture_001_thumb.png", _service.GenerateThumbnailFilename("subdir/capture_001.png"));
+        }
+
+        [Fact]
+        public void GetDirectoryPaths_ReturnCorrectPaths()
+        {
+            Assert.Equal(Path.Combine(_tempDir, "originals"), _service.GetOriginalsDir());
+            Assert.Equal(Path.Combine(_tempDir, "edited"), _service.GetEditedDir());
+            Assert.Equal(Path.Combine(_tempDir, "thumbnails"), _service.GetThumbnailsDir());
+            Assert.Equal(Path.Combine(_tempDir, "videos"), _service.GetVideosDir());
+        }
     }
 }

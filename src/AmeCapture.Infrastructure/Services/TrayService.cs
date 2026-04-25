@@ -1,145 +1,163 @@
-using System.Linq;
 using System.Runtime.InteropServices;
 using AmeCapture.Application.Interfaces;
 using AmeCapture.Application.Messages;
 using CommunityToolkit.Mvvm.Messaging;
 
-namespace AmeCapture.Infrastructure.Services;
-
-public class TrayService : ITrayService
+namespace AmeCapture.Infrastructure.Services
 {
-    private NotifyIcon? _notifyIcon;
-    private ContextMenuStrip? _contextMenu;
-    private readonly IMessenger _messenger;
-
-    public TrayService(IMessenger messenger)
+    public class TrayService(IMessenger messenger) : ITrayService, IDisposable
     {
-        _messenger = messenger;
-    }
+        private NotifyIcon? _notifyIcon;
+        private ContextMenuStrip? _contextMenu;
+        private bool _disposed;
+        private readonly IMessenger _messenger = messenger;
 
-    public void Initialize()
-    {
-        try
+        public void Initialize()
         {
-            _contextMenu = new ContextMenuStrip();
-
-            var showItem = new ToolStripMenuItem("ウィンドウを表示");
-            showItem.Click += (s, e) => ShowWindow();
-            _contextMenu.Items.Add(showItem);
-
-            _contextMenu.Items.Add(new ToolStripSeparator());
-
-            var captureMenu = new ToolStripMenuItem("キャプチャ");
-            var regionItem = new ToolStripMenuItem("範囲キャプチャ");
-            regionItem.Click += (s, e) => TriggerCapture("region");
-            var fullscreenItem = new ToolStripMenuItem("全画面キャプチャ");
-            fullscreenItem.Click += (s, e) => TriggerCapture("fullscreen");
-            var windowItem = new ToolStripMenuItem("ウィンドウキャプチャ");
-            windowItem.Click += (s, e) => TriggerCapture("window");
-            captureMenu.DropDownItems.Add(regionItem);
-            captureMenu.DropDownItems.Add(fullscreenItem);
-            captureMenu.DropDownItems.Add(windowItem);
-            _contextMenu.Items.Add(captureMenu);
-
-            _contextMenu.Items.Add(new ToolStripSeparator());
-
-            var settingsItem = new ToolStripMenuItem("設定");
-            settingsItem.Click += (s, e) => ShowSettings();
-            _contextMenu.Items.Add(settingsItem);
-
-            _contextMenu.Items.Add(new ToolStripSeparator());
-
-            var exitItem = new ToolStripMenuItem("終了");
-            exitItem.Click += (s, e) => _messenger.Send(new ExitRequestedMessage());
-            _contextMenu.Items.Add(exitItem);
-
-            _notifyIcon = new NotifyIcon
+            try
             {
-                Icon = System.Drawing.SystemIcons.Application,
-                Visible = true,
-                Text = "AmeCapture",
-                ContextMenuStrip = _contextMenu
-            };
+                _contextMenu = new ContextMenuStrip();
 
-            _notifyIcon.MouseClick += (s, e) =>
-            {
-                if (e.Button == MouseButtons.Left)
+                var showItem = new ToolStripMenuItem("ウィンドウを表示");
+                showItem.Click += (s, e) => ShowWindow();
+                _ = _contextMenu.Items.Add(showItem);
+
+                _ = _contextMenu.Items.Add(new ToolStripSeparator());
+
+                var captureMenu = new ToolStripMenuItem("キャプチャ");
+                var regionItem = new ToolStripMenuItem("範囲キャプチャ");
+                regionItem.Click += (s, e) => TriggerCapture("region");
+                var fullscreenItem = new ToolStripMenuItem("全画面キャプチャ");
+                fullscreenItem.Click += (s, e) => TriggerCapture("fullscreen");
+                var windowItem = new ToolStripMenuItem("ウィンドウキャプチャ");
+                windowItem.Click += (s, e) => TriggerCapture("window");
+                _ = captureMenu.DropDownItems.Add(regionItem);
+                _ = captureMenu.DropDownItems.Add(fullscreenItem);
+                _ = captureMenu.DropDownItems.Add(windowItem);
+                _ = _contextMenu.Items.Add(captureMenu);
+
+                _ = _contextMenu.Items.Add(new ToolStripSeparator());
+
+                var settingsItem = new ToolStripMenuItem("設定");
+                settingsItem.Click += (s, e) => ShowSettings();
+                _ = _contextMenu.Items.Add(settingsItem);
+
+                _ = _contextMenu.Items.Add(new ToolStripSeparator());
+
+                var exitItem = new ToolStripMenuItem("終了");
+                exitItem.Click += (s, e) => _messenger.Send(new ExitRequestedMessage());
+                _ = _contextMenu.Items.Add(exitItem);
+
+                _notifyIcon = new NotifyIcon
                 {
-                    ShowWindow();
-                }
-            };
+                    Icon = SystemIcons.Application,
+                    Visible = true,
+                    Text = "AmeCapture",
+                    ContextMenuStrip = _contextMenu
+                };
 
-            Serilog.Log.Information("TrayService initialized successfully");
-        }
-        catch (Exception ex)
-        {
-            Serilog.Log.Error(ex, "Failed to initialize TrayService");
-        }
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-    private const int SW_HIDE = 0;
-    private const int SW_SHOW = 5;
-
-    public void ShowWindow()
-    {
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            var window = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
-            if (window != null)
-            {
-                var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
-                if (platformWindow != null)
+                _notifyIcon.MouseClick += (s, e) =>
                 {
-                    var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(platformWindow);
-                    ShowWindow(hWnd, SW_SHOW);
-                    platformWindow.Activate();
-                }
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        ShowWindow();
+                    }
+                };
+
+                Serilog.Log.Information("TrayService initialized successfully");
             }
-        });
-    }
-
-    public void HideWindow()
-    {
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            var window = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
-            if (window != null)
+            catch (Exception ex)
             {
-                var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
-                if (platformWindow != null)
-                {
-                    var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(platformWindow);
-                    ShowWindow(hWnd, SW_HIDE);
-                }
+                Serilog.Log.Error(ex, "Failed to initialize TrayService");
             }
-        });
-    }
-
-    public void Exit()
-    {
-        try
-        {
-            _notifyIcon?.Dispose();
-            _contextMenu?.Dispose();
-            Serilog.Log.Information("TrayService exited");
         }
-        catch (Exception ex)
+
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        private const int SW_HIDE = 0;
+        private const int SW_SHOW = 5;
+
+        public void ShowWindow()
         {
-            Serilog.Log.Warning(ex, "Error during TrayService cleanup");
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                var window = Microsoft.Maui.Controls.Application.Current?.Windows[0];
+                if (window != null)
+                {
+                    var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
+                    if (platformWindow != null)
+                    {
+                        nint hWnd = WinRT.Interop.WindowNative.GetWindowHandle(platformWindow);
+                        _ = ShowWindow(hWnd, SW_SHOW);
+                        platformWindow.Activate();
+                    }
+                }
+            });
         }
-    }
 
-    private void ShowSettings()
-    {
-        ShowWindow();
-    }
+        public void HideWindow()
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                var window = Microsoft.Maui.Controls.Application.Current?.Windows[0];
+                if (window != null)
+                {
+                    var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
+                    if (platformWindow != null)
+                    {
+                        nint hWnd = WinRT.Interop.WindowNative.GetWindowHandle(platformWindow);
+                        _ = ShowWindow(hWnd, SW_HIDE);
+                    }
+                }
+            });
+        }
 
-    private void TriggerCapture(string captureType)
-    {
-        Serilog.Log.Debug("TrayService.TriggerCapture: {CaptureType}", captureType);
-        _messenger.Send(new CaptureRequestedMessage(captureType));
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                _notifyIcon?.Dispose();
+                _contextMenu?.Dispose();
+            }
+
+            _disposed = true;
+        }
+
+        public void Exit()
+        {
+            try
+            {
+                Dispose();
+                Serilog.Log.Information("TrayService exited");
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "Error during TrayService cleanup");
+            }
+        }
+
+        private void ShowSettings()
+        {
+            ShowWindow();
+        }
+
+        private void TriggerCapture(string captureType)
+        {
+            Serilog.Log.Debug("TrayService.TriggerCapture: {CaptureType}", captureType);
+            _ = _messenger.Send(new CaptureRequestedMessage(captureType));
+        }
     }
 }

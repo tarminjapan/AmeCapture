@@ -1,8 +1,9 @@
 using AmeCapture.Application.Models;
 
-namespace AmeCapture.Application.Interfaces;
-
-public interface IWindowEnumerationService
+namespace AmeCapture.Application.Interfaces
 {
-    Task<IReadOnlyList<WindowInfo>> EnumerateWindowsAsync();
+    public interface IWindowEnumerationService
+    {
+        public Task<IReadOnlyList<WindowInfo>> EnumerateWindowsAsync();
+    }
 }

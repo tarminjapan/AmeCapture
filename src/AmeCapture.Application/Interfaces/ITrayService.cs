@@ -1,9 +1,10 @@
-namespace AmeCapture.Application.Interfaces;
-
-public interface ITrayService
+namespace AmeCapture.Application.Interfaces
 {
-    void Initialize();
-    void ShowWindow();
-    void HideWindow();
-    void Exit();
+    public interface ITrayService
+    {
+        public void Initialize();
+        public void ShowWindow();
+        public void HideWindow();
+        public void Exit();
+    }
 }

@@ -1,16 +1,17 @@
-namespace AmeCapture.Application.Interfaces;
-
-public interface IStorageService
+namespace AmeCapture.Application.Interfaces
 {
-    Task EnsureDirectoriesAsync();
-    string GetBasePath();
-    string ResolveOriginalPath(string filename);
-    string ResolveEditedPath(string filename);
-    string ResolveThumbnailPath(string originalFilename);
-    string ResolveVideoPath(string filename);
-    string GetOriginalsDir();
-    string GetEditedDir();
-    string GetThumbnailsDir();
-    string GetVideosDir();
-    string GenerateThumbnailFilename(string originalFilename);
+    public interface IStorageService
+    {
+        public Task EnsureDirectoriesAsync();
+        public string GetBasePath();
+        public string ResolveOriginalPath(string filename);
+        public string ResolveEditedPath(string filename);
+        public string ResolveThumbnailPath(string originalFilename);
+        public string ResolveVideoPath(string filename);
+        public string GetOriginalsDir();
+        public string GetEditedDir();
+        public string GetThumbnailsDir();
+        public string GetVideosDir();
+        public string GenerateThumbnailFilename(string originalFilename);
+    }
 }

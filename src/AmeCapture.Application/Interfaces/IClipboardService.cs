@@ -1,7 +1,8 @@
-namespace AmeCapture.Application.Interfaces;
-
-public interface IClipboardService
+namespace AmeCapture.Application.Interfaces
 {
-    Task SetImageAsync(System.Drawing.Image image);
-    Task SetTextAsync(string text);
+    public interface IClipboardService
+    {
+        public Task SetImageAsync(System.Drawing.Image image);
+        public Task SetTextAsync(string text);
+    }
 }
