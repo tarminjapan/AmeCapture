@@ -7,7 +7,7 @@ namespace AmeCapture.Tests.Domain
         [Fact]
         public void ArrowAnnotation_DefaultValues_AreSet()
         {
-            var ann =  new ArrowAnnotation();
+            var ann = new ArrowAnnotation();
 
             Assert.NotEqual(string.Empty, ann.Id);
             Assert.Equal("arrow", ann.Type);
