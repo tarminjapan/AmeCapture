@@ -1,22 +1,25 @@
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using AmeCapture.Application.Interfaces;
 using AmeCapture.Domain.Entities;
 using SkiaSharp;
 
 namespace AmeCapture.Infrastructure.Services;
 
-[SupportedOSPlatform("windows")]
 public class SkiaSharpEditorService : IEditorService
 {
     public async Task ApplyAnnotationsAsync(
         string sourcePath, string outputPath, IReadOnlyList<Annotation> annotations)
     {
+        Serilog.Log.Debug("SkiaSharpEditorService.ApplyAnnotationsAsync: source={Source}, output={Output}, annotations={Count}", sourcePath, outputPath, annotations.Count);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         await Task.Run(() =>
         {
             using var original = SKBitmap.Decode(sourcePath);
             if (original == null)
                 throw new InvalidOperationException($"Failed to load image: {sourcePath}");
+
+            Serilog.Log.Debug("SkiaSharpEditorService: source image decoded, {Width}x{Height}", original.Width, original.Height);
 
             var cropAnnotation = annotations.OfType<CropAnnotation>().FirstOrDefault();
 
@@ -25,6 +28,7 @@ public class SkiaSharpEditorService : IEditorService
 
             if (cropAnnotation != null)
             {
+                Serilog.Log.Debug("SkiaSharpEditorService: applying crop ({X},{Y},{W},{H})", cropAnnotation.X, cropAnnotation.Y, cropAnnotation.Width, cropAnnotation.Height);
                 workingBitmap = ApplyCrop(original, cropAnnotation);
                 offsetX = Math.Max(0, cropAnnotation.X);
                 offsetY = Math.Max(0, cropAnnotation.Y);
@@ -45,6 +49,7 @@ public class SkiaSharpEditorService : IEditorService
 
             foreach (var annotation in annotations)
             {
+                Serilog.Log.Debug("SkiaSharpEditorService: applying annotation type={Type}", annotation.GetType().Name);
                 switch (annotation)
                 {
                     case ArrowAnnotation arrow:
@@ -92,6 +97,9 @@ public class SkiaSharpEditorService : IEditorService
             data.SaveTo(stream);
 
             workingBitmap.Dispose();
+
+            sw.Stop();
+            Serilog.Log.Debug("SkiaSharpEditorService.ApplyAnnotationsAsync completed in {Elapsed}ms", sw.ElapsedMilliseconds);
         });
     }
 

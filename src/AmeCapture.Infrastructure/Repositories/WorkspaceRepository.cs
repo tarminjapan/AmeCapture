@@ -15,6 +15,7 @@ public class WorkspaceRepository : IWorkspaceRepository
 
     public async Task<IReadOnlyList<WorkspaceItem>> GetAllAsync()
     {
+        Serilog.Log.Debug("WorkspaceRepository.GetAllAsync");
         using var connection = await _connectionFactory.CreateConnectionAsync();
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -30,11 +31,13 @@ public class WorkspaceRepository : IWorkspaceRepository
             items.Add(ReadWorkspaceItem(reader));
         }
 
+        Serilog.Log.Debug("WorkspaceRepository.GetAllAsync: returned {Count} items", items.Count);
         return items.AsReadOnly();
     }
 
     public async Task<WorkspaceItem?> GetByIdAsync(string id)
     {
+        Serilog.Log.Debug("WorkspaceRepository.GetByIdAsync: {ItemId}", id);
         using var connection = await _connectionFactory.CreateConnectionAsync();
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -46,14 +49,18 @@ public class WorkspaceRepository : IWorkspaceRepository
         using var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            return ReadWorkspaceItem(reader);
+            var item = ReadWorkspaceItem(reader);
+            Serilog.Log.Debug("WorkspaceRepository.GetByIdAsync: found item {ItemId}", id);
+            return item;
         }
 
+        Serilog.Log.Debug("WorkspaceRepository.GetByIdAsync: item not found {ItemId}", id);
         return null;
     }
 
     public async Task AddAsync(WorkspaceItem item)
     {
+        Serilog.Log.Debug("WorkspaceRepository.AddAsync: {ItemId}, title={Title}", item.Id, item.Title);
         using var connection = await _connectionFactory.CreateConnectionAsync();
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -75,10 +82,12 @@ public class WorkspaceRepository : IWorkspaceRepository
         AddParameter(command, "@metadata_json", (object?)item.MetadataJson ?? DBNull.Value);
 
         await command.ExecuteNonQueryAsync();
+        Serilog.Log.Debug("WorkspaceRepository.AddAsync: item {ItemId} inserted", item.Id);
     }
 
     public async Task UpdateAsync(WorkspaceItem item)
     {
+        Serilog.Log.Debug("WorkspaceRepository.UpdateAsync: {ItemId}", item.Id);
         using var connection = await _connectionFactory.CreateConnectionAsync();
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -99,16 +108,19 @@ public class WorkspaceRepository : IWorkspaceRepository
         AddParameter(command, "@id", item.Id);
 
         await command.ExecuteNonQueryAsync();
+        Serilog.Log.Debug("WorkspaceRepository.UpdateAsync: item {ItemId} updated", item.Id);
     }
 
     public async Task DeleteAsync(string id)
     {
+        Serilog.Log.Debug("WorkspaceRepository.DeleteAsync: {ItemId}", id);
         using var connection = await _connectionFactory.CreateConnectionAsync();
         using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM workspace_items WHERE id = @id";
         AddParameter(command, "@id", id);
 
         await command.ExecuteNonQueryAsync();
+        Serilog.Log.Debug("WorkspaceRepository.DeleteAsync: item {ItemId} deleted", id);
     }
 
     public async Task<IReadOnlyList<WorkspaceItem>> GetByIdsAsync(IEnumerable<string> ids)

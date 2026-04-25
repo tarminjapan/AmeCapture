@@ -68,6 +68,7 @@ public partial class WorkspaceViewModel : ObservableObject
 
     private async Task HandleCaptureRequestAsync(string captureType)
     {
+        Serilog.Log.Debug("WorkspaceViewModel.HandleCaptureRequestAsync: captureType={CaptureType}", captureType);
         await MainThread.InvokeOnMainThreadAsync(async () =>
         {
             switch (captureType)
@@ -88,12 +89,14 @@ public partial class WorkspaceViewModel : ObservableObject
     public async Task LoadItemsAsync()
     {
         if (_workspaceRepository == null) return;
+        Serilog.Log.Debug("WorkspaceViewModel.LoadItemsAsync started");
         try
         {
             var items = await _workspaceRepository.GetAllAsync();
             Items.Clear();
             foreach (var item in items.OrderByDescending(i => i.CreatedAt))
                 Items.Add(item);
+            Serilog.Log.Debug("WorkspaceViewModel.LoadItemsAsync: loaded {Count} items", Items.Count);
         }
         catch (Exception ex)
         {
@@ -105,11 +108,13 @@ public partial class WorkspaceViewModel : ObservableObject
     private async Task CaptureFullScreenAsync()
     {
         if (_captureOrchestrator == null) return;
+        Serilog.Log.Debug("WorkspaceViewModel.CaptureFullScreenAsync started");
         IsCapturing = true;
         try
         {
             var item = await _captureOrchestrator.CaptureFullScreenAsync();
             Items.Insert(0, item);
+            Serilog.Log.Debug("WorkspaceViewModel: fullscreen capture item added, ItemId={ItemId}", item.Id);
             await NotifyCaptureCompleteAsync(item);
         }
         catch (Exception ex)
@@ -119,18 +124,21 @@ public partial class WorkspaceViewModel : ObservableObject
         finally
         {
             IsCapturing = false;
+            Serilog.Log.Debug("WorkspaceViewModel.CaptureFullScreenAsync finished, IsCapturing=false");
         }
     }
 
     public async Task CaptureWindowAsync(nint hwnd)
     {
         if (_captureOrchestrator == null) return;
+        Serilog.Log.Debug("WorkspaceViewModel.CaptureWindowAsync started, hwnd={Hwnd}", hwnd);
         IsCapturing = true;
         try
         {
             var item = await _captureOrchestrator.CaptureWindowAsync(hwnd);
             Items.Insert(0, item);
             IsWindowSelectionMode = false;
+            Serilog.Log.Debug("WorkspaceViewModel: window capture item added, ItemId={ItemId}", item.Id);
             await NotifyCaptureCompleteAsync(item);
         }
         catch (Exception ex)
@@ -140,6 +148,7 @@ public partial class WorkspaceViewModel : ObservableObject
         finally
         {
             IsCapturing = false;
+            Serilog.Log.Debug("WorkspaceViewModel.CaptureWindowAsync finished, IsCapturing=false");
         }
     }
 
@@ -147,10 +156,12 @@ public partial class WorkspaceViewModel : ObservableObject
     private async Task PrepareRegionCaptureAsync()
     {
         if (_captureOrchestrator == null) return;
+        Serilog.Log.Debug("WorkspaceViewModel.PrepareRegionCaptureAsync started");
         IsCapturing = true;
         try
         {
             RegionCaptureInfo = await _captureOrchestrator.PrepareRegionCaptureAsync();
+            Serilog.Log.Debug("WorkspaceViewModel: region capture prepared, ScreenSize={Width}x{Height}", RegionCaptureInfo.ScreenWidth, RegionCaptureInfo.ScreenHeight);
         }
         catch (Exception ex)
         {
@@ -165,6 +176,7 @@ public partial class WorkspaceViewModel : ObservableObject
     public async Task FinalizeRegionCaptureAsync(CaptureRegion region)
     {
         if (_captureOrchestrator == null || RegionCaptureInfo == null) return;
+        Serilog.Log.Debug("WorkspaceViewModel.FinalizeRegionCaptureAsync started, region=({X},{Y},{W},{H})", region.X, region.Y, region.Width, region.Height);
         IsCapturing = true;
         try
         {
@@ -172,6 +184,7 @@ public partial class WorkspaceViewModel : ObservableObject
                 RegionCaptureInfo.TempPath, region);
             Items.Insert(0, item);
             RegionCaptureInfo = null;
+            Serilog.Log.Debug("WorkspaceViewModel: region capture finalized, ItemId={ItemId}", item.Id);
             await NotifyCaptureCompleteAsync(item);
         }
         catch (Exception ex)
@@ -187,6 +200,7 @@ public partial class WorkspaceViewModel : ObservableObject
     public async Task CancelRegionCaptureAsync()
     {
         if (_captureOrchestrator == null || RegionCaptureInfo == null) return;
+        Serilog.Log.Debug("WorkspaceViewModel.CancelRegionCaptureAsync");
         try
         {
             await _captureOrchestrator.CancelRegionCaptureAsync(RegionCaptureInfo.TempPath);
@@ -202,6 +216,7 @@ public partial class WorkspaceViewModel : ObservableObject
     private async Task PrepareWindowCaptureAsync()
     {
         if (_captureOrchestrator == null) return;
+        Serilog.Log.Debug("WorkspaceViewModel.PrepareWindowCaptureAsync started");
         IsCapturing = true;
         try
         {
@@ -210,6 +225,7 @@ public partial class WorkspaceViewModel : ObservableObject
             foreach (var w in windows)
                 Windows.Add(w);
             IsWindowSelectionMode = true;
+            Serilog.Log.Debug("WorkspaceViewModel: window selection mode enabled, {Count} windows", Windows.Count);
         }
         catch (Exception ex)
         {
@@ -223,6 +239,7 @@ public partial class WorkspaceViewModel : ObservableObject
 
     public void CancelWindowCapture()
     {
+        Serilog.Log.Debug("WorkspaceViewModel.CancelWindowCapture");
         IsWindowSelectionMode = false;
     }
 
@@ -233,6 +250,7 @@ public partial class WorkspaceViewModel : ObservableObject
         item ??= SelectedItem;
         if (item == null) return;
 
+        Serilog.Log.Debug("WorkspaceViewModel.CopyToClipboardAsync: ItemId={ItemId}", item.Id);
         try
         {
             var path = item.CurrentPath;
@@ -240,6 +258,7 @@ public partial class WorkspaceViewModel : ObservableObject
 
             using var image = System.Drawing.Image.FromFile(path);
             await _clipboardService.SetImageAsync(image);
+            Serilog.Log.Debug("WorkspaceViewModel: image copied to clipboard for ItemId={ItemId}", item.Id);
         }
         catch (Exception ex)
         {
@@ -254,12 +273,14 @@ public partial class WorkspaceViewModel : ObservableObject
         item ??= SelectedItem;
         if (item == null) return;
 
+        Serilog.Log.Debug("WorkspaceViewModel.DeleteItemAsync: ItemId={ItemId}", item.Id);
         try
         {
             await _workspaceRepository.DeleteAsync(item.Id);
             Items.Remove(item);
             if (SelectedItem == item)
                 SelectedItem = null;
+            Serilog.Log.Debug("WorkspaceViewModel: item deleted, ItemId={ItemId}", item.Id);
         }
         catch (Exception ex)
         {
@@ -274,6 +295,7 @@ public partial class WorkspaceViewModel : ObservableObject
         item ??= SelectedItem;
         if (item == null) return;
 
+        Serilog.Log.Debug("WorkspaceViewModel.ToggleFavoriteAsync: ItemId={ItemId}, newFavorite={NewFavorite}", item.Id, !item.IsFavorite);
         try
         {
             item.IsFavorite = !item.IsFavorite;

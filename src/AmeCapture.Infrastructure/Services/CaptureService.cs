@@ -1,17 +1,15 @@
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using AmeCapture.Application.Interfaces;
 using AmeCapture.Application.Models;
 
 namespace AmeCapture.Infrastructure.Services;
 
-[SupportedOSPlatform("windows")]
 public class CaptureService : ICaptureService
 {
     public async Task<CaptureResult> CaptureFullScreenAsync(string savePath)
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            throw new PlatformNotSupportedException("Screen capture is only supported on Windows.");
+        Serilog.Log.Debug("CaptureFullScreenAsync started, savePath={SavePath}", savePath);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
 
         return await Task.Run(() =>
         {
@@ -21,11 +19,13 @@ public class CaptureService : ICaptureService
 
             int width = NativeMethods.GetSystemMetrics(NativeMethods.SM_CXSCREEN);
             int height = NativeMethods.GetSystemMetrics(NativeMethods.SM_CYSCREEN);
+            Serilog.Log.Debug("Screen dimensions: {Width}x{Height}", width, height);
 
             if (width <= 0 || height <= 0)
                 throw new InvalidOperationException("Invalid screen dimensions.");
 
             using var screenDc = new SafeScreenDc(NativeMethods.GetDC(IntPtr.Zero));
+            Serilog.Log.Debug("ScreenDC handle: {Handle}, IsInvalid={IsInvalid}", screenDc.DangerousGetHandle(), screenDc.IsInvalid);
             using var memDc = new SafeCompatibleDc(screenDc);
             using var bitmap = new SafeBitmap(memDc, width, height);
             using var selectGuard = new SafeSelectObject(memDc, bitmap.DangerousGetHandle());
@@ -35,6 +35,10 @@ public class CaptureService : ICaptureService
 
             using var img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
             img.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
+            Serilog.Log.Debug("Image saved to {SavePath}, size={Size} bytes", savePath, new FileInfo(savePath).Length);
+
+            sw.Stop();
+            Serilog.Log.Debug("CaptureFullScreenAsync completed in {Elapsed}ms", sw.ElapsedMilliseconds);
 
             return new CaptureResult
             {
@@ -47,8 +51,8 @@ public class CaptureService : ICaptureService
 
     public async Task<CaptureResult> CaptureWindowAsync(nint hwnd, string savePath)
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            throw new PlatformNotSupportedException("Window capture is only supported on Windows.");
+        Serilog.Log.Debug("CaptureWindowAsync started, hwnd={Hwnd}, savePath={SavePath}", hwnd, savePath);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
 
         return await Task.Run(() =>
         {
@@ -59,11 +63,13 @@ public class CaptureService : ICaptureService
             var (left, top, right, bottom) = GetWindowBounds(hwnd);
             int width = right - left;
             int height = bottom - top;
+            Serilog.Log.Debug("Window bounds: left={Left}, top={Top}, right={Right}, bottom={Bottom}, size={Width}x{Height}", left, top, right, bottom, width, height);
 
             if (width <= 0 || height <= 0)
                 throw new InvalidOperationException("Invalid window dimensions.");
 
             using var windowDc = new SafeWindowDc(hwnd, NativeMethods.GetWindowDC(hwnd));
+            Serilog.Log.Debug("WindowDC handle: {Handle}, IsInvalid={IsInvalid}", windowDc.DangerousGetHandle(), windowDc.IsInvalid);
             using var memDc = new SafeCompatibleDc(windowDc);
             using var bitmap = new SafeBitmap(memDc, width, height);
             using var selectGuard = new SafeSelectObject(memDc, bitmap.DangerousGetHandle());
@@ -74,6 +80,10 @@ public class CaptureService : ICaptureService
 
             using var img = System.Drawing.Image.FromHbitmap(bitmap.DangerousGetHandle());
             img.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
+            Serilog.Log.Debug("Window image saved to {SavePath}, size={Size} bytes", savePath, new FileInfo(savePath).Length);
+
+            sw.Stop();
+            Serilog.Log.Debug("CaptureWindowAsync completed in {Elapsed}ms", sw.ElapsedMilliseconds);
 
             return new CaptureResult
             {

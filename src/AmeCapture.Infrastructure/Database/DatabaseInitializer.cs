@@ -6,6 +6,7 @@ public static class DatabaseInitializer
 {
     public static async Task InitializeAsync(IDbConnectionFactory connectionFactory)
     {
+        Serilog.Log.Debug("DatabaseInitializer.InitializeAsync started");
         using var connection = await connectionFactory.CreateConnectionAsync();
         using var transaction = await connection.BeginTransactionAsync();
         using var command = connection.CreateCommand();
@@ -48,5 +49,6 @@ public static class DatabaseInitializer
                 ON workspace_items(is_favorite);";
         await command.ExecuteNonQueryAsync();
         await transaction.CommitAsync();
+        Serilog.Log.Debug("DatabaseInitializer.InitializeAsync completed: schema created");
     }
 }

@@ -14,18 +14,21 @@ public class StorageService : IStorageService
     public StorageService(string basePath)
     {
         _basePath = basePath;
+        Serilog.Log.Debug("StorageService initialized with basePath={BasePath}", basePath);
     }
 
     public string GetBasePath() => _basePath;
 
     public async Task EnsureDirectoriesAsync()
     {
+        Serilog.Log.Debug("StorageService.EnsureDirectoriesAsync: basePath={BasePath}", _basePath);
         var dirs = new[] { DirOriginals, DirEdited, DirThumbnails, DirVideos };
         foreach (var dir in dirs)
         {
             var path = Path.Combine(_basePath, dir);
             if (!Directory.Exists(path))
             {
+                Serilog.Log.Debug("StorageService: creating directory {Path}", path);
                 Directory.CreateDirectory(path);
             }
         }

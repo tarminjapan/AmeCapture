@@ -19,9 +19,6 @@ public class TrayService : ITrayService
 
     public void Initialize()
     {
-        if (!OperatingSystem.IsWindows())
-            return;
-
         try
         {
             _contextMenu = new ContextMenuStrip();
@@ -93,7 +90,6 @@ public class TrayService : ITrayService
             var window = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
             if (window != null)
             {
-#if WINDOWS
                 var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
                 if (platformWindow != null)
                 {
@@ -101,7 +97,6 @@ public class TrayService : ITrayService
                     ShowWindow(hWnd, SW_SHOW);
                     platformWindow.Activate();
                 }
-#endif
             }
         });
     }
@@ -113,14 +108,12 @@ public class TrayService : ITrayService
             var window = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
             if (window != null)
             {
-#if WINDOWS
                 var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
                 if (platformWindow != null)
                 {
                     var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(platformWindow);
                     ShowWindow(hWnd, SW_HIDE);
                 }
-#endif
             }
         });
     }
@@ -146,6 +139,7 @@ public class TrayService : ITrayService
 
     private void TriggerCapture(string captureType)
     {
+        Serilog.Log.Debug("TrayService.TriggerCapture: {CaptureType}", captureType);
         _messenger.Send(new CaptureRequestedMessage(captureType));
     }
 }

@@ -13,11 +13,9 @@ public partial class App : global::Microsoft.Maui.Controls.Application
     private IGlobalShortcutService? _shortcutService;
     private ISettingsRepository? _settingsRepository;
 
-#if WINDOWS
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     private const int SW_HIDE = 0;
-#endif
 
     private bool _isExiting;
 
@@ -29,7 +27,6 @@ public partial class App : global::Microsoft.Maui.Controls.Application
     protected override Window CreateWindow(IActivationState? activationState)
     {
         var window = new Window(new AppShell());
-#if WINDOWS
         window.Created += (s, e) =>
         {
             var platformWindow = window.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
@@ -49,32 +46,40 @@ public partial class App : global::Microsoft.Maui.Controls.Application
                 };
             }
         };
-#endif
         return window;
     }
 
     protected override async void OnStart()
     {
         base.OnStart();
+        Serilog.Log.Debug("App.OnStart called");
 
         try
         {
             var services = Handler?.MauiContext?.Services;
-            if (services == null) return;
+            if (services == null)
+            {
+                Serilog.Log.Warning("App.OnStart: MauiContext.Services is null");
+                return;
+            }
 
+            Serilog.Log.Debug("App.OnStart: registering ExitRequestedMessage");
             var messenger = services.GetRequiredService<IMessenger>();
             messenger.Register<AmeCapture.Application.Messages.ExitRequestedMessage>(this, (r, m) =>
             {
+                Serilog.Log.Debug("App: ExitRequestedMessage received");
                 MainThread.BeginInvokeOnMainThread(Exit);
             });
 
+            Serilog.Log.Debug("App.OnStart: initializing database");
             var dbFactory = services.GetRequiredService<IDbConnectionFactory>();
             await DatabaseInitializer.InitializeAsync(dbFactory);
 
+            Serilog.Log.Debug("App.OnStart: ensuring storage directories");
             var storageService = services.GetRequiredService<IStorageService>();
             await storageService.EnsureDirectoriesAsync();
 
-#if WINDOWS
+            Serilog.Log.Debug("App.OnStart: initializing tray and shortcuts");
             _trayService = services.GetRequiredService<ITrayService>();
             _shortcutService = services.GetRequiredService<IGlobalShortcutService>();
             await _shortcutService.InitializeAsync();
@@ -82,9 +87,11 @@ public partial class App : global::Microsoft.Maui.Controls.Application
 
             _trayService.Initialize();
 
+            Serilog.Log.Debug("App.OnStart: loading settings and registering shortcuts");
             var settings = await _settingsRepository.GetAsync();
             await RegisterShortcutsAsync(settings);
-#endif
+
+            Serilog.Log.Debug("App.OnStart: initialization complete");
         }
         catch (Exception ex)
         {
@@ -92,10 +99,11 @@ public partial class App : global::Microsoft.Maui.Controls.Application
         }
     }
 
-#if WINDOWS
     private async Task RegisterShortcutsAsync(Domain.Entities.AppSettings settings)
     {
         if (_shortcutService == null) return;
+
+        Serilog.Log.Debug("App.RegisterShortcutsAsync: region={Region}, fullscreen={Fullscreen}, window={Window}", settings.HotkeyCaptureRegion, settings.HotkeyCaptureFullscreen, settings.HotkeyCaptureWindow);
 
         var notificationService = Handler?.MauiContext?.Services.GetService<INotificationService>();
 
@@ -103,8 +111,10 @@ public partial class App : global::Microsoft.Maui.Controls.Application
         {
             if (string.IsNullOrEmpty(shortcut)) return;
 
+            Serilog.Log.Debug("App.RegisterShortcutsAsync: registering {Name}={Shortcut}", name, shortcut);
             bool success = _shortcutService.RegisterHotKey(name, shortcut, () =>
             {
+                Serilog.Log.Debug("App: hotkey {Name} triggered, sending CaptureRequestedMessage({Type})", name, type);
                 Dispatcher.Dispatch(() =>
                 {
                     var messenger = Handler?.MauiContext?.Services.GetService<IMessenger>();
@@ -112,11 +122,15 @@ public partial class App : global::Microsoft.Maui.Controls.Application
                 });
             });
 
-            if (!success && notificationService != null)
+            if (!success)
             {
-                await notificationService.ShowNotificationAsync(
-                    "ショートカット登録失敗",
-                    $"{label}のショートカット ({shortcut}) は既に他のアプリで使用されています。");
+                Serilog.Log.Warning("App: failed to register hotkey {Name}={Shortcut}", name, shortcut);
+                if (notificationService != null)
+                {
+                    await notificationService.ShowNotificationAsync(
+                        "ショートカット登録失敗",
+                        $"{label}のショートカット ({shortcut}) は既に他のアプリで使用されています。");
+                }
             }
         }
 
@@ -131,14 +145,11 @@ public partial class App : global::Microsoft.Maui.Controls.Application
             Serilog.Log.Error(ex, "Failed to register global shortcuts");
         }
     }
-#endif
 
     public void Exit()
     {
         _isExiting = true;
-#if WINDOWS
         _trayService?.Exit();
-#endif
         Quit();
     }
 }

@@ -18,6 +18,7 @@ public partial class WorkspacePage : ContentPage
 
     private async void OnPageLoaded(object? sender, EventArgs e)
     {
+        Serilog.Log.Debug("WorkspacePage.OnPageLoaded");
         await _viewModel.LoadItemsAsync();
     }
 
@@ -26,6 +27,7 @@ public partial class WorkspacePage : ContentPage
         if (sender is not BindableObject bindable) return;
         if (bindable.BindingContext is not WorkspaceItem item) return;
 
+        Serilog.Log.Debug("WorkspacePage.OnItemTapped: ItemId={ItemId}", item.Id);
         _viewModel.SelectedItem = item;
 
         var parameters = new Dictionary<string, object>
@@ -58,6 +60,7 @@ public partial class WorkspacePage : ContentPage
     protected override void OnNavigatedTo(NavigatedToEventArgs args)
     {
         base.OnNavigatedTo(args);
+        Serilog.Log.Debug("WorkspacePage.OnNavigatedTo");
         _ = _viewModel.LoadItemsAsync();
     }
 }

@@ -1,11 +1,9 @@
-using System.Runtime.Versioning;
 using AmeCapture.Application.Interfaces;
 using AmeCapture.Domain.Entities;
 using AmeCapture.Infrastructure.Services;
 
 namespace AmeCapture.Tests.Integration;
 
-[SupportedOSPlatform("windows")]
 public class EditorServiceTests : IAsyncLifetime
 {
     private readonly string _tempDir;

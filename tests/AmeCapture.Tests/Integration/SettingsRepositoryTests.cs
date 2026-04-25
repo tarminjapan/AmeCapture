@@ -56,7 +56,7 @@ public class SettingsRepositoryTests : IAsyncLifetime
     {
         var settings = new AppSettings
         {
-            SavePath = "/home/user/Pictures/AmeCapture",
+            SavePath = @"C:\Users\user\Pictures\AmeCapture",
             ImageFormat = "jpg",
             StartMinimized = true,
             HotkeyCaptureRegion = "Ctrl+Alt+S",
@@ -67,7 +67,7 @@ public class SettingsRepositoryTests : IAsyncLifetime
         await _repo.SaveAsync(settings);
         var loaded = await _repo.GetAsync();
 
-        Assert.Equal("/home/user/Pictures/AmeCapture", loaded.SavePath);
+        Assert.Equal(@"C:\Users\user\Pictures\AmeCapture", loaded.SavePath);
         Assert.Equal("jpg", loaded.ImageFormat);
         Assert.True(loaded.StartMinimized);
         Assert.Equal("Ctrl+Alt+S", loaded.HotkeyCaptureRegion);
