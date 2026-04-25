@@ -1,116 +1,98 @@
 # AmeCapture
 
-A local screen capture application built with **Rust + Tauri v2** and **React + TypeScript**.
+A local screen capture application built with **.NET MAUI (C#)** and **SkiaSharp** for image editing.
 
 ## Architecture
 
 ```text
 AmeCapture/
-├── src/                        # Frontend (React + TypeScript)
-│   ├── main.tsx               # Entry point
-│   ├── App.tsx                # Root component
-│   ├── pages/                 # Page components
-│   │   ├── WorkspacePage.tsx  # Capture history browser
-│   │   ├── EditorPage.tsx     # Image annotation editor
-│   │   └── SettingsPage.tsx   # Application settings
-│   ├── components/            # Reusable UI components
-│   │   ├── ThumbnailGrid.tsx  # Image thumbnail grid
-│   │   ├── Toolbar.tsx        # Main toolbar
-│   │   ├── SearchBar.tsx      # Search/filter bar
-│   │   └── DetailPanel.tsx    # Item detail panel
-│   ├── stores/                # Zustand state stores
-│   ├── hooks/                 # Custom React hooks
-│   ├── types/                 # TypeScript type definitions
-│   └── lib/                   # Utility functions
-├── src-tauri/                  # Backend (Rust + Tauri v2)
-│   ├── src/
-│   │   ├── main.rs            # Rust entry point
-│   │   ├── lib.rs             # Tauri app setup & plugin registration
-│   │   ├── commands/          # Tauri IPC command handlers
-│   │   │   ├── capture.rs     # Capture commands
-│   │   │   ├── workspace.rs   # Workspace CRUD commands
-│   │   │   ├── editor.rs      # Editor commands
-│   │   │   └── settings.rs    # Settings commands
-│   │   ├── capture/           # Screen capture logic (Win32 API)
-│   │   ├── workspace/         # Workspace item management
-│   │   ├── editor/            # Image editing tools
-│   │   ├── db/                # SQLite database (rusqlite)
-│   │   ├── config/            # App configuration
-│   │   └── utils/             # Error types & utilities
-│   ├── Cargo.toml             # Rust dependencies
-│   └── tauri.conf.json        # Tauri configuration
-├── package.json                # Node.js dependencies
-├── vite.config.ts              # Vite build config
-└── tsconfig.json               # TypeScript config
+├── src-dotnet/                          # .NET MAUI Application (primary)
+│   ├── AmeCapture.Domain/               # Domain entities (no dependencies)
+│   │   └── Entities/
+│   │       ├── WorkspaceItem.cs         # Capture item model
+│   │       ├── Tag.cs                   # Tag model
+│   │       ├── AppSettings.cs           # App settings
+│   │       └── Annotation.cs           # Annotation hierarchy
+│   ├── AmeCapture.Application/          # Interfaces & Models
+│   │   ├── Interfaces/                  # Service contracts
+│   │   ├── Models/                      # DTOs (CaptureResult, WindowInfo, etc.)
+│   │   └── Messages/                    # Messenger messages
+│   ├── AmeCapture.Infrastructure/       # Implementations (Windows)
+│   │   ├── Database/                    # SQLite (Microsoft.Data.Sqlite)
+│   │   ├── Repositories/                # Data access
+│   │   └── Services/                    # Capture, Editor, Tray, Shortcuts, etc.
+│   ├── AmeCapture.App/                  # MAUI UI Layer
+│   │   ├── Views/                       # XAML pages
+│   │   ├── ViewModels/                  # MVVM ViewModels
+│   │   └── Platforms/                   # Platform-specific code
+│   └── AmeCapture.Tests/                # xUnit tests
+├── src-tauri/                           # [FROZEN] Legacy Rust + Tauri v2 (deprecated)
+├── src/                                 # [FROZEN] Legacy React + TypeScript frontend (deprecated)
+├── documents/                           # Design & migration documents
+└── scripts/                             # Build utilities
 ```
 
 ## Tech Stack
 
-### Frontend
+### Primary (.NET MAUI)
 
-- **React 19** + **TypeScript 5.8**
-- **Tailwind CSS 4** for styling
-- **Zustand** for state management
-- **Lucide React** for icons
-- **Vite 6** for build tooling
+- **.NET 10** with **MAUI** (Preview — 正式リリース後に安定版へ移行予定)
+- **CommunityToolkit.Mvvm** for MVVM pattern
+- **SkiaSharp** for image annotation rendering
+- **Microsoft.Data.Sqlite** for SQLite database
+- **Serilog** for structured logging
+- **Win32 API** (P/Invoke) for screen capture (GDI+ BitBlt)
 
-### Backend
+### Legacy (Frozen)
 
-- **Rust** (Edition 2021)
-- **Tauri v2** for desktop app framework
-- **rusqlite** for SQLite database
-- **image** crate for image processing
-- **Win32 API** (via `windows` crate) for screen capture
-
-### Plugins
-
-- `tauri-plugin-clipboard-manager` - Clipboard operations
-- `tauri-plugin-global-shortcut` - Global hotkeys
-- `tauri-plugin-notification` - System notifications
-- `tauri-plugin-store` - Persistent key-value store
+- **Rust** + **Tauri v2** (backend) — see `src-tauri/`
+- **React 19** + **TypeScript 5.8** (frontend) — see `src/`
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18+)
-- [Rust](https://www.rust-lang.org/tools/install) (v1.70+)
-- [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (latest preview)
+- **Windows 10 1809+** (for Win32 platform features)
+- Visual Studio 2022 17.12+ or later with MAUI workload
 
-### Install Dependencies
+### Build & Run
 
 ```bash
-# Install frontend dependencies
-npm install
+# Build the .NET MAUI application
+dotnet build src-dotnet/AmeCapture.App/AmeCapture.App.csproj -f net10.0-windows10.0.19041.0
 
-# Build Rust dependencies (first time takes a while)
-cd src-tauri && cargo build
+# Run the application
+dotnet run --project src-dotnet/AmeCapture.App/AmeCapture.App.csproj -f net10.0-windows10.0.19041.0
 ```
 
-### Development
+### Run Tests
 
 ```bash
-# Start dev server (frontend + backend with hot reload)
+dotnet test src-dotnet/AmeCapture.Tests/
+```
+
+### Legacy (Tauri/Rust)
+
+The legacy Tauri/Rust application is frozen. See [Migration Guide](documents/MigrationGuide.md) for details.
+
+```bash
+# Legacy dev server (requires Node.js + Rust)
 npm run tauri dev
 ```
 
-### Build
+## Features
 
-```bash
-# Build production app
-npm run tauri build
-```
-
-## Features (MVP)
-
-- [x] Full screen capture
+- [x] Full screen capture (GDI+ BitBlt)
 - [x] Region capture
 - [x] Window capture
 - [x] Capture history (workspace)
-- [x] Image annotation (arrow, rectangle, mosaic)
+- [x] Image annotation (arrow, rectangle, text, mosaic, crop)
 - [x] Undo/Redo
 - [x] Global hotkeys
 - [x] Clipboard copy
+- [x] System tray with minimize-to-tray
+- [x] Tag management
 - [x] Settings management
 
 ## License

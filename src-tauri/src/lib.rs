@@ -1,3 +1,5 @@
+// ⚠️ DEPRECATED: This Tauri/Rust implementation is frozen. Use src-dotnet/ (.NET MAUI) instead.
+// See src-tauri/FROZEN.md for details.
 #![deny(clippy::all)]
 #![deny(warnings)]
 

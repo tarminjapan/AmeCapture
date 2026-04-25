@@ -1,3 +1,5 @@
+// ⚠️ DEPRECATED: This React/TypeScript frontend is frozen. Use src-dotnet/ (.NET MAUI) instead.
+// See src-tauri/FROZEN.md for details.
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { logger, installGlobalErrorLogging } from './lib/logger';
