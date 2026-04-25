@@ -77,6 +77,7 @@ public partial class App : global::Microsoft.Maui.Controls.Application
 #if WINDOWS
             _trayService = services.GetRequiredService<ITrayService>();
             _shortcutService = services.GetRequiredService<IGlobalShortcutService>();
+            await _shortcutService.InitializeAsync();
             _settingsRepository = services.GetRequiredService<ISettingsRepository>();
 
             _trayService.Initialize();

@@ -11,10 +11,10 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
     private IntPtr _messageWindow = IntPtr.Zero;
     private Thread? _messageThread;
     private volatile bool _running = true;
+    private readonly TaskCompletionSource<IntPtr> _initTcs = new();
 
     public GlobalShortcutService()
     {
-        var tcs = new TaskCompletionSource<IntPtr>();
         _messageThread = new Thread(() =>
         {
             var wc = new WndClassEx
@@ -30,7 +30,7 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
                 var hwnd = NativeMethods.CreateWindowEx(
                     0, wc.ClassName, "", 0, 0, 0, 1, 1, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
                 _messageWindow = hwnd;
-                tcs.SetResult(hwnd);
+                _initTcs.SetResult(hwnd);
 
                 Serilog.Log.Information("GlobalShortcutService message loop started");
 
@@ -53,18 +53,26 @@ public class GlobalShortcutService : IGlobalShortcutService, IDisposable
             else
             {
                 Serilog.Log.Error("Failed to register window class for GlobalShortcutService");
-                tcs.SetException(new InvalidOperationException("Failed to register window class"));
+                _initTcs.SetException(new InvalidOperationException("Failed to register window class"));
             }
         }) { IsBackground = true };
         _messageThread.Start();
+    }
 
+    public async Task InitializeAsync()
+    {
         try
         {
-            tcs.Task.Wait(TimeSpan.FromSeconds(5));
-        }
-        catch (AggregateException ex) when (ex.InnerException is TimeoutException)
-        {
-            Serilog.Log.Error("GlobalShortcutService initialization timed out");
+            var delayTask = Task.Delay(TimeSpan.FromSeconds(5));
+            var completedTask = await Task.WhenAny(_initTcs.Task, delayTask);
+            if (completedTask == delayTask)
+            {
+                Serilog.Log.Error("GlobalShortcutService initialization timed out");
+            }
+            else
+            {
+                await _initTcs.Task;
+            }
         }
         catch (Exception ex)
         {
