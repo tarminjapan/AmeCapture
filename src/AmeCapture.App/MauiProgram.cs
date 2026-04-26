@@ -10,6 +10,8 @@ namespace AmeCapture.App
 {
     public static class MauiProgram
     {
+        private const string LogOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}";
+
         public static MauiApp CreateMauiApp()
         {
             string logPath = Path.Combine(
@@ -27,10 +29,10 @@ namespace AmeCapture.App
                     logPath,
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 30,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
+                    outputTemplate: LogOutputTemplate);
 
 #if DEBUG
-            loggerConfiguration = loggerConfiguration.WriteTo.Console();
+            loggerConfiguration = loggerConfiguration.WriteTo.Console(outputTemplate: LogOutputTemplate);
 #endif
 
             Log.Logger = loggerConfiguration.CreateLogger();
