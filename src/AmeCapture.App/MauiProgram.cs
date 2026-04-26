@@ -18,7 +18,7 @@ namespace AmeCapture.App
                 "logs",
                 "amecapture-.log");
 
-            Log.Logger = new LoggerConfiguration()
+            LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                 .MinimumLevel.Override("System", LogEventLevel.Warning)
@@ -27,8 +27,13 @@ namespace AmeCapture.App
                     logPath,
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 30,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-                .CreateLogger();
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
+
+#if DEBUG
+            loggerConfiguration = loggerConfiguration.WriteTo.Console();
+#endif
+
+            Log.Logger = loggerConfiguration.CreateLogger();
 
             Log.Information("AmeCapture starting up");
             Log.Debug("Log file path: {LogPath}", logPath);
