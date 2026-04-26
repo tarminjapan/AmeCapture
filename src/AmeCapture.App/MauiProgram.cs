@@ -60,6 +60,7 @@ namespace AmeCapture.App
                 .UseMauiApp<App>()
                 .ConfigureFonts(fonts =>
                 {
+                    fonts.AddFont("NotoSansJP-Regular.otf", "Noto Sans JP");
                 });
 
             string basePath = Path.Combine(

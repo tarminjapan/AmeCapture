@@ -2,9 +2,36 @@
 
 echo "=== Pre-commit checks (CI equivalent or stricter) ==="
 
+# 0. Check for static analysis suppression comments
+echo ""
+echo "[0/4] Checking for static analysis suppression comments..."
+FOUND_FILES=$(grep -rn \
+  -e "#pragma warning disable" \
+  -e "#pragma warning restore" \
+  -e "SuppressMessage" \
+  -e "pyright: ignore" \
+  -e "type: ignore" \
+  -e "noqa" \
+  -e "pylint: disable" \
+  -e "// @ts-ignore" \
+  -e "// @ts-nocheck" \
+  -e "eslint-disable" \
+  -e "prettier-ignore" \
+  -e "// eslint-disable-next-line" \
+  --include="*.cs" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" \
+  src/ 2>/dev/null || true)
+if [ -n "$FOUND_FILES" ]; then
+  echo ""
+  echo "❌ Static analysis suppression comments detected:"
+  echo "$FOUND_FILES"
+  echo "Do not suppress lint/type errors. Fix the root cause instead."
+  exit 1
+fi
+echo "No suppression comments found."
+
 # 1. Format check (lint) — CI uses --severity warn
 echo ""
-echo "[1/3] Running dotnet format check..."
+echo "[1/4] Running dotnet format check..."
 dotnet format AmeCapture.slnx --verify-no-changes --severity warn
 if [ $? -ne 0 ]; then
   echo ""
@@ -14,7 +41,7 @@ fi
 
 # 2. Build — same as CI (-warnaserror)
 echo ""
-echo "[2/3] Running dotnet build..."
+echo "[2/4] Running dotnet build..."
 dotnet restore AmeCapture.slnx
 dotnet build src/AmeCapture.App/AmeCapture.App.csproj -f net10.0-windows10.0.19041.0 --no-restore -warnaserror
 if [ $? -ne 0 ]; then
@@ -25,7 +52,7 @@ fi
 
 # 3. Test — same as CI
 echo ""
-echo "[3/3] Running dotnet test..."
+echo "[3/4] Running dotnet test..."
 dotnet restore tests/AmeCapture.Tests/AmeCapture.Tests.csproj
 dotnet build tests/AmeCapture.Tests/AmeCapture.Tests.csproj --no-restore
 dotnet test tests/AmeCapture.Tests/AmeCapture.Tests.csproj --no-build --verbosity normal

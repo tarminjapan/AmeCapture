@@ -24,6 +24,12 @@ namespace AmeCapture.App
         {
             InitializeComponent();
             UserAppTheme = AppTheme.Dark;
+
+            Console.CancelKeyPress += (sender, e) =>
+            {
+                e.Cancel = true;
+                MainThread.BeginInvokeOnMainThread(Exit);
+            };
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
@@ -155,7 +161,12 @@ namespace AmeCapture.App
         public void Exit()
         {
             _isExiting = true;
+            if (_shortcutService is IDisposable shortcutDisposable)
+            {
+                shortcutDisposable.Dispose();
+            }
             _trayService?.Exit();
+            Serilog.Log.CloseAndFlush();
             Quit();
         }
     }

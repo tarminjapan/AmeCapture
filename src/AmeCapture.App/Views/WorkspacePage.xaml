@@ -10,10 +10,6 @@
 
     <Grid RowDefinitions="Auto,*">
         <HorizontalStackLayout Grid.Row="0" Padding="16,8" Spacing="12">
-            <Label Text="AmeCapture"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   VerticalOptions="Center" />
             <Button Text="領域"
                     Command="{Binding PrepareRegionCaptureCommand}"
                     SemanticProperties.Description="Capture region" />
