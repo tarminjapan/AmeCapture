@@ -13,23 +13,12 @@ namespace AmeCapture.App
         private IGlobalShortcutService? _shortcutService;
         private ISettingsRepository? _settingsRepository;
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-        private const int SW_HIDE = 0;
-
         private bool _isExiting;
 
         public App()
         {
             InitializeComponent();
             UserAppTheme = AppTheme.Dark;
-
-            Console.CancelKeyPress += (sender, e) =>
-            {
-                e.Cancel = true;
-                MainThread.BeginInvokeOnMainThread(Exit);
-            };
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
@@ -49,7 +38,7 @@ namespace AmeCapture.App
                         if (!_isExiting)
                         {
                             args.Cancel = true;
-                            _ = ShowWindow(hWnd, SW_HIDE);
+                            Exit();
                         }
                     };
                 }
@@ -167,7 +156,7 @@ namespace AmeCapture.App
             }
             _trayService?.Exit();
             Serilog.Log.CloseAndFlush();
-            Quit();
+            Environment.Exit(0);
         }
     }
 }
