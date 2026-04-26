@@ -90,6 +90,11 @@ namespace AmeCapture.App.Views
                     Serilog.Log.Debug("EditorPage.LoadImage: decoded bitmap {Width}x{Height}", bitmap.Width, bitmap.Height);
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
+                        if (_viewModel.ImagePath != filePath)
+                        {
+                            bitmap.Dispose();
+                            return;
+                        }
                         _sourceBitmap?.Dispose();
                         _sourceBitmap = bitmap;
                         CanvasView.InvalidateSurface();

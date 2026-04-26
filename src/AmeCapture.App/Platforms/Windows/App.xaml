@@ -7,7 +7,7 @@
 
     <maui:MauiWinUIApplication.Resources>
         <ResourceDictionary>
-            <FontFamily x:Key="ContentControlThemeFontFamily">ms-appx:///NotoSansJP-Regular.otf#Noto Sans JP</FontFamily>
+            <FontFamily x:Key="ContentControlThemeFontFamily">Noto Sans JP</FontFamily>
         </ResourceDictionary>
     </maui:MauiWinUIApplication.Resources>
 

@@ -5,9 +5,11 @@ using AmeCapture.Infrastructure.Database;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.UI;
 
+using MauiApp = Microsoft.Maui.Controls.Application;
+
 namespace AmeCapture.App
 {
-    public partial class App : Microsoft.Maui.Controls.Application
+    public partial class App : MauiApp
     {
         private ITrayService? _trayService;
         private IGlobalShortcutService? _shortcutService;
@@ -156,7 +158,7 @@ namespace AmeCapture.App
             }
             _trayService?.Exit();
             Serilog.Log.CloseAndFlush();
-            Environment.Exit(0);
+            Current?.Quit();
         }
     }
 }
