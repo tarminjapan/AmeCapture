@@ -23,6 +23,7 @@ namespace AmeCapture.App
         public App()
         {
             InitializeComponent();
+            UserAppTheme = AppTheme.Dark;
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
@@ -107,7 +108,7 @@ namespace AmeCapture.App
                 return;
             }
 
-            Serilog.Log.Debug("App.RegisterShortcutsAsync: region={Region}, fullscreen={Fullscreen}, window={Window}", settings.HotkeyCaptureRegion, settings.HotkeyCaptureFullscreen, settings.HotkeyCaptureWindow);
+            Serilog.Log.Debug("App.RegisterShortcutsAsync: region={Region}", settings.HotkeyCaptureRegion);
 
             INotificationService? notificationService = Handler?.MauiContext?.Services.GetService<INotificationService>();
 
@@ -144,8 +145,6 @@ namespace AmeCapture.App
             try
             {
                 await TryRegister("CaptureRegion", settings.HotkeyCaptureRegion, "範囲キャプチャ", "region");
-                await TryRegister("CaptureFullscreen", settings.HotkeyCaptureFullscreen, "全画面キャプチャ", "fullscreen");
-                await TryRegister("CaptureWindow", settings.HotkeyCaptureWindow, "ウィンドウキャプチャ", "window");
             }
             catch (Exception ex)
             {

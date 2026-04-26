@@ -18,16 +18,11 @@ namespace AmeCapture.App.ViewModels
         private readonly IMessenger? _messenger;
 
         public ObservableCollection<WorkspaceItem> Items { get; } = [];
-        public ObservableCollection<WindowInfo> Windows { get; } = [];
-
         [ObservableProperty]
         public partial bool IsCapturing { get; set; }
 
         [ObservableProperty]
         public partial RegionCaptureInfo? RegionCaptureInfo { get; set; }
-
-        [ObservableProperty]
-        public partial bool IsWindowSelectionMode { get; set; }
 
         [ObservableProperty]
         public partial WorkspaceItem? SelectedItem { get; set; }
@@ -65,19 +60,9 @@ namespace AmeCapture.App.ViewModels
             Serilog.Log.Debug("WorkspaceViewModel.HandleCaptureRequestAsync: captureType={CaptureType}", captureType);
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                switch (captureType)
+                if (captureType == "region")
                 {
-                    case "region":
-                        await PrepareRegionCaptureCommand.ExecuteAsync(null);
-                        break;
-                    case "fullscreen":
-                        await CaptureFullScreenCommand.ExecuteAsync(null);
-                        break;
-                    case "window":
-                        await PrepareWindowCaptureCommand.ExecuteAsync(null);
-                        break;
-                    default:
-                        break;
+                    await PrepareRegionCaptureCommand.ExecuteAsync(null);
                 }
             });
         }
@@ -104,62 +89,6 @@ namespace AmeCapture.App.ViewModels
             catch (Exception ex)
             {
                 Serilog.Log.Error(ex, "Failed to load workspace items");
-            }
-        }
-
-        [RelayCommand]
-        private async Task CaptureFullScreenAsync()
-        {
-            if (_captureOrchestrator == null)
-            {
-                return;
-            }
-
-            Serilog.Log.Debug("WorkspaceViewModel.CaptureFullScreenAsync started");
-            IsCapturing = true;
-            try
-            {
-                WorkspaceItem item = await _captureOrchestrator.CaptureFullScreenAsync();
-                Items.Insert(0, item);
-                Serilog.Log.Debug("WorkspaceViewModel: fullscreen capture item added, ItemId={ItemId}", item.Id);
-                await NotifyCaptureCompleteAsync(item);
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Error(ex, "Fullscreen capture failed");
-            }
-            finally
-            {
-                IsCapturing = false;
-                Serilog.Log.Debug("WorkspaceViewModel.CaptureFullScreenAsync finished, IsCapturing=false");
-            }
-        }
-
-        public async Task CaptureWindowAsync(nint hwnd)
-        {
-            if (_captureOrchestrator == null)
-            {
-                return;
-            }
-
-            Serilog.Log.Debug("WorkspaceViewModel.CaptureWindowAsync started, hwnd={Hwnd}", hwnd);
-            IsCapturing = true;
-            try
-            {
-                WorkspaceItem item = await _captureOrchestrator.CaptureWindowAsync(hwnd);
-                Items.Insert(0, item);
-                IsWindowSelectionMode = false;
-                Serilog.Log.Debug("WorkspaceViewModel: window capture item added, ItemId={ItemId}", item.Id);
-                await NotifyCaptureCompleteAsync(item);
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Error(ex, "Window capture failed");
-            }
-            finally
-            {
-                IsCapturing = false;
-                Serilog.Log.Debug("WorkspaceViewModel.CaptureWindowAsync finished, IsCapturing=false");
             }
         }
 
@@ -233,44 +162,6 @@ namespace AmeCapture.App.ViewModels
                 Serilog.Log.Warning(ex, "Region capture cancellation failed");
             }
             RegionCaptureInfo = null;
-        }
-
-        [RelayCommand]
-        private async Task PrepareWindowCaptureAsync()
-        {
-            if (_captureOrchestrator == null)
-            {
-                return;
-            }
-
-            Serilog.Log.Debug("WorkspaceViewModel.PrepareWindowCaptureAsync started");
-            IsCapturing = true;
-            try
-            {
-                IReadOnlyList<WindowInfo> windows = await _captureOrchestrator.PrepareWindowCaptureAsync();
-                Windows.Clear();
-                foreach (WindowInfo w in windows)
-                {
-                    Windows.Add(w);
-                }
-
-                IsWindowSelectionMode = true;
-                Serilog.Log.Debug("WorkspaceViewModel: window selection mode enabled, {Count} windows", Windows.Count);
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Error(ex, "Window capture preparation failed");
-            }
-            finally
-            {
-                IsCapturing = false;
-            }
-        }
-
-        public void CancelWindowCapture()
-        {
-            Serilog.Log.Debug("WorkspaceViewModel.CancelWindowCapture");
-            IsWindowSelectionMode = false;
         }
 
         [RelayCommand]

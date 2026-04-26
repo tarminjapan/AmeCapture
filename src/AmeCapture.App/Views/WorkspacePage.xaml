@@ -14,15 +14,9 @@
                    FontSize="24"
                    FontAttributes="Bold"
                    VerticalOptions="Center" />
-            <Button Text="全画面"
-                    Command="{Binding CaptureFullScreenCommand}"
-                    SemanticProperties.Description="Capture full screen" />
             <Button Text="領域"
                     Command="{Binding PrepareRegionCaptureCommand}"
                     SemanticProperties.Description="Capture region" />
-            <Button Text="ウィンドウ"
-                    Command="{Binding PrepareWindowCaptureCommand}"
-                    SemanticProperties.Description="Capture window" />
             <BoxView WidthRequest="1" Color="Gray" Margin="4,0" />
             <Button Text="コピー"
                     Command="{Binding CopyToClipboardCommand}"
@@ -52,7 +46,7 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="{x:Type model:WorkspaceItem}">
                     <Border Padding="0" Margin="0" StrokeShape="RoundRectangle 8" HeightRequest="180" WidthRequest="180"
-                            BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}">
+                            BackgroundColor="{AppThemeBinding Light=#1E1E1E, Dark=#1E1E1E}">
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnItemTapped" />
                         </Border.GestureRecognizers>

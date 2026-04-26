@@ -47,8 +47,6 @@ namespace AmeCapture.Tests.Integration
             Assert.Equal("png", settings.ImageFormat);
             Assert.False(settings.StartMinimized);
             Assert.Equal("Ctrl+Shift+S", settings.HotkeyCaptureRegion);
-            Assert.Equal("Ctrl+Shift+F", settings.HotkeyCaptureFullscreen);
-            Assert.Equal("Ctrl+Shift+W", settings.HotkeyCaptureWindow);
         }
 
         [Fact]
@@ -59,9 +57,7 @@ namespace AmeCapture.Tests.Integration
                 SavePath = @"C:\Users\user\Pictures\AmeCapture",
                 ImageFormat = "jpg",
                 StartMinimized = true,
-                HotkeyCaptureRegion = "Ctrl+Alt+S",
-                HotkeyCaptureFullscreen = "Ctrl+Alt+F",
-                HotkeyCaptureWindow = "Ctrl+Alt+W"
+                HotkeyCaptureRegion = "Ctrl+Alt+S"
             };
 
             await _repo.SaveAsync(settings);
@@ -71,8 +67,6 @@ namespace AmeCapture.Tests.Integration
             Assert.Equal("jpg", loaded.ImageFormat);
             Assert.True(loaded.StartMinimized);
             Assert.Equal("Ctrl+Alt+S", loaded.HotkeyCaptureRegion);
-            Assert.Equal("Ctrl+Alt+F", loaded.HotkeyCaptureFullscreen);
-            Assert.Equal("Ctrl+Alt+W", loaded.HotkeyCaptureWindow);
         }
 
         [Fact]

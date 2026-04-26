@@ -7,102 +7,15 @@ namespace AmeCapture.Infrastructure.Services
     public class CaptureOrchestrator(
         ICaptureService captureService,
         IThumbnailService thumbnailService,
-        IWindowEnumerationService windowEnumerationService,
         IStorageService storageService,
         IWorkspaceRepository workspaceRepository,
         IClipboardService? clipboardService = null) : ICaptureOrchestrator
     {
         private readonly ICaptureService _captureService = captureService;
         private readonly IThumbnailService _thumbnailService = thumbnailService;
-        private readonly IWindowEnumerationService _windowEnumerationService = windowEnumerationService;
         private readonly IStorageService _storageService = storageService;
         private readonly IWorkspaceRepository _workspaceRepository = workspaceRepository;
         private readonly IClipboardService? _clipboardService = clipboardService;
-
-        public async Task<WorkspaceItem> CaptureFullScreenAsync()
-        {
-            Serilog.Log.Debug("CaptureOrchestrator.CaptureFullScreenAsync started");
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            await _storageService.EnsureDirectoriesAsync();
-
-            string filename = $"capture_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
-            string originalPath = _storageService.ResolveOriginalPath(filename);
-            string editedPath = _storageService.ResolveEditedPath(filename);
-            string thumbPath = _storageService.ResolveThumbnailPath(filename);
-            Serilog.Log.Debug("Paths resolved - original={OriginalPath}, edited={EditedPath}, thumb={ThumbPath}", originalPath, editedPath, thumbPath);
-
-            CaptureResult captureResult = await _captureService.CaptureFullScreenAsync(originalPath);
-            Serilog.Log.Debug("Capture result: {Width}x{Height}", captureResult.Width, captureResult.Height);
-
-            File.Copy(originalPath, editedPath, overwrite: true);
-            _ = await _thumbnailService.GenerateThumbnailAsync(originalPath, thumbPath);
-            Serilog.Log.Debug("Thumbnail generated at {ThumbPath}", thumbPath);
-
-            string now = DateTime.UtcNow.ToString("o");
-            var item = new WorkspaceItem
-            {
-                Id = Guid.NewGuid().ToString(),
-                ItemType = WorkspaceItemType.Image,
-                OriginalPath = originalPath,
-                CurrentPath = editedPath,
-                ThumbnailPath = thumbPath,
-                Title = $"Capture {DateTime.Now:yyyy/MM/dd HH:mm:ss}",
-                CreatedAt = now,
-                UpdatedAt = now,
-                IsFavorite = false,
-                MetadataJson = null
-            };
-
-            await _workspaceRepository.AddAsync(item);
-            Serilog.Log.Debug("WorkspaceItem added to repository: {ItemId}", item.Id);
-            await CopyToClipboardAsync(originalPath);
-
-            sw.Stop();
-            Serilog.Log.Debug("CaptureOrchestrator.CaptureFullScreenAsync completed in {Elapsed}ms, ItemId={ItemId}", sw.ElapsedMilliseconds, item.Id);
-            return item;
-        }
-
-        public async Task<WorkspaceItem> CaptureWindowAsync(nint hwnd)
-        {
-            Serilog.Log.Debug("CaptureOrchestrator.CaptureWindowAsync started, hwnd={Hwnd}", hwnd);
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            await _storageService.EnsureDirectoriesAsync();
-
-            string filename = $"capture_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png";
-            string originalPath = _storageService.ResolveOriginalPath(filename);
-            string editedPath = _storageService.ResolveEditedPath(filename);
-            string thumbPath = _storageService.ResolveThumbnailPath(filename);
-
-            CaptureResult captureResult = await _captureService.CaptureWindowAsync(hwnd, originalPath);
-            Serilog.Log.Debug("Window capture result: {Width}x{Height}", captureResult.Width, captureResult.Height);
-
-            File.Copy(originalPath, editedPath, overwrite: true);
-            _ = await _thumbnailService.GenerateThumbnailAsync(originalPath, thumbPath);
-
-            string now = DateTime.UtcNow.ToString("o");
-            var item = new WorkspaceItem
-            {
-                Id = Guid.NewGuid().ToString(),
-                ItemType = WorkspaceItemType.Image,
-                OriginalPath = originalPath,
-                CurrentPath = editedPath,
-                ThumbnailPath = thumbPath,
-                Title = $"Window Capture {DateTime.Now:yyyy/MM/dd HH:mm:ss}",
-                CreatedAt = now,
-                UpdatedAt = now,
-                IsFavorite = false,
-                MetadataJson = null
-            };
-
-            await _workspaceRepository.AddAsync(item);
-            await CopyToClipboardAsync(originalPath);
-
-            sw.Stop();
-            Serilog.Log.Debug("CaptureOrchestrator.CaptureWindowAsync completed in {Elapsed}ms, ItemId={ItemId}", sw.ElapsedMilliseconds, item.Id);
-            return item;
-        }
 
         public async Task<RegionCaptureInfo> PrepareRegionCaptureAsync()
         {
@@ -202,14 +115,6 @@ namespace AmeCapture.Infrastructure.Services
             TryDeleteFile(sourcePath);
             Serilog.Log.Debug("CancelRegionCaptureAsync: temp file deleted");
             await Task.CompletedTask;
-        }
-
-        public async Task<IReadOnlyList<WindowInfo>> PrepareWindowCaptureAsync()
-        {
-            Serilog.Log.Debug("CaptureOrchestrator.PrepareWindowCaptureAsync started");
-            IReadOnlyList<WindowInfo> windows = await _windowEnumerationService.EnumerateWindowsAsync();
-            Serilog.Log.Debug("PrepareWindowCaptureAsync: found {Count} windows", windows.Count);
-            return windows;
         }
 
         private static void ValidateTempPath(string sourcePath)
