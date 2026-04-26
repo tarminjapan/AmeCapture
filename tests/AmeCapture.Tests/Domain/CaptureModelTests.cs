@@ -25,16 +25,6 @@ namespace AmeCapture.Tests.Domain
         }
 
         [Fact]
-        public void WindowInfo_DefaultValues()
-        {
-            var info = new WindowInfo();
-            Assert.Equal(IntPtr.Zero, info.Hwnd);
-            Assert.Equal(string.Empty, info.Title);
-            Assert.Equal(string.Empty, info.ClassName);
-            Assert.Equal(default, info.Bounds);
-        }
-
-        [Fact]
         public void CaptureResult_DefaultValues()
         {
             var result = new CaptureResult();

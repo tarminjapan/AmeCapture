@@ -5,6 +5,5 @@ namespace AmeCapture.Application.Interfaces
     public interface ICaptureService
     {
         public Task<CaptureResult> CaptureFullScreenAsync(string savePath);
-        public Task<CaptureResult> CaptureWindowAsync(nint hwnd, string savePath);
     }
 }

@@ -36,12 +36,6 @@ namespace AmeCapture.Infrastructure.Repositories
                     case "hotkey_capture_region":
                         settings.HotkeyCaptureRegion = value;
                         break;
-                    case "hotkey_capture_fullscreen":
-                        settings.HotkeyCaptureFullscreen = value;
-                        break;
-                    case "hotkey_capture_window":
-                        settings.HotkeyCaptureWindow = value;
-                        break;
                     default:
                         break;
                 }
@@ -62,8 +56,6 @@ namespace AmeCapture.Infrastructure.Repositories
                 await UpsertAsync(connection, transaction, "start_minimized",
                     settings.StartMinimized ? "true" : "false");
                 await UpsertAsync(connection, transaction, "hotkey_capture_region", settings.HotkeyCaptureRegion);
-                await UpsertAsync(connection, transaction, "hotkey_capture_fullscreen", settings.HotkeyCaptureFullscreen);
-                await UpsertAsync(connection, transaction, "hotkey_capture_window", settings.HotkeyCaptureWindow);
 
                 await transaction.CommitAsync();
             }

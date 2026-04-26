@@ -60,8 +60,6 @@ namespace AmeCapture.App
                 .UseMauiApp<App>()
                 .ConfigureFonts(fonts =>
                 {
-                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
             string basePath = Path.Combine(
@@ -94,7 +92,6 @@ namespace AmeCapture.App
 
             builder.Services.AddSingleton<ICaptureService, CaptureService>();
             builder.Services.AddSingleton<IThumbnailService, ThumbnailService>();
-            builder.Services.AddSingleton<IWindowEnumerationService, WindowEnumerationService>();
             builder.Services.AddSingleton<ICaptureOrchestrator, CaptureOrchestrator>();
             builder.Services.AddSingleton<IEditorService, SkiaSharpEditorService>();
             builder.Services.AddSingleton<IGlobalShortcutService, GlobalShortcutService>();

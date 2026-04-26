@@ -27,13 +27,7 @@ namespace AmeCapture.Infrastructure.Services
                 var captureMenu = new ToolStripMenuItem("キャプチャ");
                 var regionItem = new ToolStripMenuItem("範囲キャプチャ");
                 regionItem.Click += (s, e) => TriggerCapture("region");
-                var fullscreenItem = new ToolStripMenuItem("全画面キャプチャ");
-                fullscreenItem.Click += (s, e) => TriggerCapture("fullscreen");
-                var windowItem = new ToolStripMenuItem("ウィンドウキャプチャ");
-                windowItem.Click += (s, e) => TriggerCapture("window");
                 _ = captureMenu.DropDownItems.Add(regionItem);
-                _ = captureMenu.DropDownItems.Add(fullscreenItem);
-                _ = captureMenu.DropDownItems.Add(windowItem);
                 _ = _contextMenu.Items.Add(captureMenu);
 
                 _ = _contextMenu.Items.Add(new ToolStripSeparator());

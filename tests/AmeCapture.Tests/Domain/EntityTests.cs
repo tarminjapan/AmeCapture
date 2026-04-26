@@ -39,8 +39,6 @@ namespace AmeCapture.Tests.Domain
             Assert.Equal("png", settings.ImageFormat);
             Assert.False(settings.StartMinimized);
             Assert.Equal("Ctrl+Shift+S", settings.HotkeyCaptureRegion);
-            Assert.Equal("Ctrl+Shift+F", settings.HotkeyCaptureFullscreen);
-            Assert.Equal("Ctrl+Shift+W", settings.HotkeyCaptureWindow);
         }
     }
 }
