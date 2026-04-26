@@ -15,7 +15,47 @@ on:
       - ".github/workflows/dotnet-ci.yml"
 
 jobs:
+  suppression-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for static analysis suppression comments
+        shell: bash
+        run: |
+          PATTERNS=(
+            "#pragma warning disable"
+            "#pragma warning restore"
+            "SuppressMessage"
+            "pyright: ignore"
+            "type: ignore"
+            "# noqa"
+            "pylint: disable"
+            "// @ts-ignore"
+            "// @ts-nocheck"
+            "eslint-disable"
+            "prettier-ignore"
+            "// eslint-disable-next-line"
+          )
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            MATCHES=$(grep -rn "$pattern" --include="*.cs" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" src/ 2>/dev/null || true)
+            if [ -n "$MATCHES" ]; then
+              echo "::error::Suppression comment '$pattern' found:"
+              echo "$MATCHES"
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -ne 0 ]; then
+            echo ""
+            echo "❌ Static analysis suppression comments detected."
+            echo "Do not suppress lint/type errors. Fix the root cause instead."
+            exit 1
+          fi
+          echo "✅ No suppression comments found."
+
   build:
+    needs: suppression-check
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +75,7 @@ jobs:
         run: dotnet build src/AmeCapture.App/AmeCapture.App.csproj -f net10.0-windows10.0.19041.0 --no-restore -warnaserror
 
   test:
+    needs: suppression-check
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +95,7 @@ jobs:
         run: dotnet test tests/AmeCapture.Tests/AmeCapture.Tests.csproj --no-build --verbosity normal
 
   lint:
+    needs: suppression-check
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
