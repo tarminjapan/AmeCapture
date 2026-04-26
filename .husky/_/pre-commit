@@ -5,25 +5,21 @@ echo "=== Pre-commit checks (CI equivalent or stricter) ==="
 # 0. Check for static analysis suppression comments
 echo ""
 echo "[0/4] Checking for static analysis suppression comments..."
-SUPPRESSION_PATTERNS="-e #pragma\ warning\ disable \
-  -e \#pragma\ warning\ restore \
-  -e SuppressMessage \
-  -e pyright:\ ignore \
-  -e type:\ ignore \
-  -e noqa \
-  -e pylint:\ disable \
-  -e //\ @ts-ignore \
-  -e //\ @ts-nocheck \
-  -e eslint-disable \
-  -e prettier-ignore \
-  -e //\ eslint-disable-next-line"
-FOUND_FILES=""
-for pattern in $SUPPRESSION_PATTERNS; do
-  MATCHES=$(grep -rn "$pattern" --include="*.cs" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" src/ 2>/dev/null || true)
-  if [ -n "$MATCHES" ]; then
-    FOUND_FILES="$FOUND_FILES$MATCHES\n"
-  fi
-done
+FOUND_FILES=$(grep -rn \
+  -e "#pragma warning disable" \
+  -e "#pragma warning restore" \
+  -e "SuppressMessage" \
+  -e "pyright: ignore" \
+  -e "type: ignore" \
+  -e "noqa" \
+  -e "pylint: disable" \
+  -e "// @ts-ignore" \
+  -e "// @ts-nocheck" \
+  -e "eslint-disable" \
+  -e "prettier-ignore" \
+  -e "// eslint-disable-next-line" \
+  --include="*.cs" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" \
+  src/ 2>/dev/null || true)
 if [ -n "$FOUND_FILES" ]; then
   echo ""
   echo "❌ Static analysis suppression comments detected:"

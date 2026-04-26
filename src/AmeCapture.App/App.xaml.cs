@@ -168,7 +168,6 @@ namespace AmeCapture.App
             _trayService?.Exit();
             Serilog.Log.CloseAndFlush();
             Quit();
-            Environment.Exit(0);
         }
     }
 }
