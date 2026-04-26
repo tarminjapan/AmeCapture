@@ -5,4 +5,10 @@
     xmlns:maui="using:Microsoft.Maui"
     xmlns:local="using:AmeCapture.App.WinUI">
 
+    <maui:MauiWinUIApplication.Resources>
+        <ResourceDictionary>
+            <FontFamily x:Key="ContentControlThemeFontFamily">Noto Sans JP</FontFamily>
+        </ResourceDictionary>
+    </maui:MauiWinUIApplication.Resources>
+
 </maui:MauiWinUIApplication>

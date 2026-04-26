@@ -75,21 +75,35 @@ namespace AmeCapture.App.Views
                 return;
             }
 
+            string filePath = _viewModel.ImagePath;
+
             _ = Task.Run(() =>
             {
-                var bitmap = SKBitmap.Decode(_viewModel.ImagePath);
-                if (bitmap == null)
+                try
                 {
-                    Serilog.Log.Warning("EditorPage.LoadImage: failed to decode bitmap from {ImagePath}", _viewModel.ImagePath);
-                    return;
+                    var bitmap = SKBitmap.Decode(filePath);
+                    if (bitmap == null)
+                    {
+                        Serilog.Log.Warning("EditorPage.LoadImage: failed to decode bitmap from {ImagePath}", filePath);
+                        return;
+                    }
+                    Serilog.Log.Debug("EditorPage.LoadImage: decoded bitmap {Width}x{Height}", bitmap.Width, bitmap.Height);
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        if (_viewModel.ImagePath != filePath)
+                        {
+                            bitmap.Dispose();
+                            return;
+                        }
+                        _sourceBitmap?.Dispose();
+                        _sourceBitmap = bitmap;
+                        CanvasView.InvalidateSurface();
+                    });
                 }
-                Serilog.Log.Debug("EditorPage.LoadImage: decoded bitmap {Width}x{Height}", bitmap.Width, bitmap.Height);
-                MainThread.BeginInvokeOnMainThread(() =>
+                catch (Exception ex)
                 {
-                    _sourceBitmap?.Dispose();
-                    _sourceBitmap = bitmap;
-                    CanvasView.InvalidateSurface();
-                });
+                    Serilog.Log.Error(ex, "EditorPage.LoadImage: failed to decode image from {ImagePath}", filePath);
+                }
             });
         }
 
